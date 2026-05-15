@@ -1,0 +1,18 @@
+[
+  {
+    "key": "america",
+    "name": "America",
+    "leaders": [
+      { "key": "washington", "name": "George Washington" },
+      { "key": "lincoln", "name": "Abraham Lincoln" }
+    ]
+  },
+  {
+    "key": "rome",
+    "name": "Rome",
+    "leaders": [
+      { "key": "augustus", "name": "Augustus Caesar" },
+      { "key": "caesar", "name": "Julius Caesar" }
+    ]
+  }
+]

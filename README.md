@@ -8,12 +8,11 @@ A mobile companion app for **Sid Meier’s Civilization V** players focused on:
 
 The project is intentionally designed as:
 
-* **offline-first**,
+* offline-first,
 * lightweight,
 * easy to maintain,
 * and optimized for rapid AI-assisted development using Cursor
 
----
 
 # Core Features
 
@@ -26,7 +25,6 @@ The project is intentionally designed as:
 * Configurable multi-choice (the app offers the number of leaders to choose from)
 * Storing each player's final selection
 
----
 
 ## Match History & Statistics
 
@@ -42,7 +40,6 @@ The project is intentionally designed as:
 * multiplayer participants,
 * and custom notes.
 
----
 
 # Project Goals
 
@@ -51,7 +48,6 @@ The project is intentionally designed as:
 * Create a useful companion app for Civilization V players
 * Explore AI-assisted (“vibe coding”) development workflows
 
----
 
 # Technology Stack
 
@@ -79,7 +75,6 @@ The project is intentionally designed as:
 - Analytics (later)
     - Sentry - An error tracking and performance monitoring platform. It helps detect crashes, log issues, and monitor app stability in production environments.
 
----
 
 # Architecture Overview
 
@@ -94,7 +89,6 @@ The application follows a modular, feature-oriented architecture.
 * Minimal global state
 * Scalable folder organization
 
----
 
 # Data Model Overview
 
@@ -111,7 +105,6 @@ Planned core entities:
 * Difficulty
 * UserPreferences
 
----
 
 # Project Structure
 
@@ -141,7 +134,6 @@ assets/data/
 | `types/`       | Shared TypeScript types      |
 | `assets/data/` | Static Civilization V data   |
 
----
 
 # Development Setup
 
@@ -154,7 +146,6 @@ assets/data/
 * Cursor
 * Git
 
----
 
 ## Recommended Commands
 
@@ -176,13 +167,11 @@ npm start
 npm run android
 ```
 
----
 
 # License
 
 TBD
 
----
 
 # Disclaimer
 
