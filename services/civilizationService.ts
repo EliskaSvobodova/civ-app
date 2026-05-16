@@ -1,14 +1,32 @@
 import civilizationsData from '@/assets/data/civilizations.json';
-import type { Civilization } from '@/types';
+import type { Civilization, CivilizationsDataset } from '@/types';
 
-const civilizations = civilizationsData as Civilization[];
+const dataset = civilizationsData as CivilizationsDataset;
+const civilizations = dataset.civilizations;
+
+export function getCivilizationsDataset(): CivilizationsDataset {
+  return dataset;
+}
 
 export function getAllCivilizations(): Civilization[] {
   return civilizations;
 }
 
+export function getCivilizationBySlug(slug: string): Civilization | undefined {
+  return civilizations.find((civ) => civ.slug === slug);
+}
+
+/** Resolves by slug (preferred) or game type id. */
 export function getCivilizationByKey(key: string): Civilization | undefined {
-  return civilizations.find((civ) => civ.key === key);
+  return civilizations.find((civ) => civ.slug === key || civ.id === key);
+}
+
+export function getCivilizationSlug(civilization: Civilization): string {
+  return civilization.slug;
+}
+
+export function getLeaderKey(civilization: Civilization): string {
+  return civilization.leader.id;
 }
 
 export function pickRandomCivilization(): Civilization {
