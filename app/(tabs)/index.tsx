@@ -32,6 +32,7 @@ export default function HomeScreen() {
         className="mt-2 flex-1 px-margin-mobile"
         data={civilizations}
         keyExtractor={(item) => item.slug}
+        removeClippedSubviews={false}
         renderItem={({ item }) => <CivilizationListItem civilization={item} />}
       />
     </Screen>
