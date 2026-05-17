@@ -16,13 +16,7 @@ export default function HomeScreen() {
   return (
     <Screen className="flex-1">
       <View className="px-margin-mobile pt-4">
-        <Heading level="lg">Imperial Tactician</Heading>
-        <Text variant="bodyLarge" className="mt-2 text-on-surface-variant">
-          Your offline-first Civilization V companion
-        </Text>
-        <Heading level="sm" className="mt-6">
-          Civilizations
-        </Heading>
+        <Heading level="lg">Civilizations</Heading>
         <Text variant="bodySmall" className="mt-1 text-on-surface-variant">
           {civilizations.length} Vox Populi civilizations
         </Text>
