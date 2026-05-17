@@ -1,19 +1,21 @@
-const tintColorLight = '#2f95dc';
-const tintColorDark = '#fff';
+import { imperialColors } from './theme';
+
+const tintColorLight = imperialColors.secondary;
+const tintColorDark = imperialColors.secondary;
 
 export default {
   light: {
-    text: '#000',
-    background: '#fff',
+    text: imperialColors.primary,
+    background: imperialColors.surface,
     tint: tintColorLight,
-    tabIconDefault: '#ccc',
+    tabIconDefault: imperialColors.muted,
     tabIconSelected: tintColorLight,
   },
   dark: {
-    text: '#fff',
-    background: '#000',
+    text: imperialColors.surface,
+    background: imperialColors.primary,
     tint: tintColorDark,
-    tabIconDefault: '#ccc',
+    tabIconDefault: 'rgba(255, 248, 245, 0.5)',
     tabIconSelected: tintColorDark,
   },
 };

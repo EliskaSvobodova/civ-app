@@ -1,87 +1,36 @@
 import { useMemo, useState } from 'react';
 import { FlatList, Pressable, View } from 'react-native';
-import { Button, Card, Divider, Searchbar, Text } from 'react-native-paper';
+import { Button, Divider, Searchbar, Text } from 'react-native-paper';
+import { router } from 'expo-router';
 
+import { CivilizationEmblem } from '@/components/civilization/CivilizationEmblem';
+import { CivilizationExpandedDetails } from '@/components/civilization/CivilizationExpandedDetails';
+import { CivilizationLeaderHeader } from '@/components/civilization/CivilizationLeaderHeader';
+import { Heading } from '@/components/ui/Heading';
+import { ImperialCard } from '@/components/ui/ImperialCard';
 import { Screen } from '@/components/ui/Screen';
 import { getAllCivilizations, pickRandomCivilization } from '@/services';
 import type { Civilization } from '@/types';
 
 function CivilizationDetails({ civilization }: { civilization: Civilization }) {
   return (
-    <Card.Content>
-      <Text variant="titleLarge">{civilization.name}</Text>
-      <Text variant="bodyMedium" className="mt-1 text-neutral-600 dark:text-neutral-400">
-        {civilization.leader.name}
-      </Text>
-
-      <Text variant="titleSmall" className="mt-4">
-        {civilization.uniqueAbility.name}
-      </Text>
-      <Text variant="bodyMedium" className="mt-1">
-        {civilization.uniqueAbility.description}
-      </Text>
-
-      {civilization.uniqueUnits.length > 0 ? (
-        <>
-          <Divider className="my-4" />
-          <Text variant="titleSmall">Unique units</Text>
-          {civilization.uniqueUnits.map((unit) => (
-            <View key={unit.id} className="mt-2">
-              <Text variant="bodyLarge">{unit.name}</Text>
-              {unit.replaces ? (
-                <Text variant="bodySmall" className="text-neutral-600 dark:text-neutral-400">
-                  Replaces {unit.replaces.name}
-                </Text>
-              ) : null}
-              {unit.strategy ? (
-                <Text variant="bodyMedium" className="mt-1">
-                  {unit.strategy}
-                </Text>
-              ) : null}
-            </View>
-          ))}
-        </>
-      ) : null}
-
-      {civilization.uniqueBuildings && civilization.uniqueBuildings.length > 0 ? (
-        <>
-          <Divider className="my-4" />
-          <Text variant="titleSmall">Unique buildings</Text>
-          {civilization.uniqueBuildings.map((building) => (
-            <View key={building.id} className="mt-2">
-              <Text variant="bodyLarge">{building.name}</Text>
-              {building.replaces ? (
-                <Text variant="bodySmall" className="text-neutral-600 dark:text-neutral-400">
-                  Replaces {building.replaces.name}
-                </Text>
-              ) : null}
-              {building.strategy ? (
-                <Text variant="bodyMedium" className="mt-1">
-                  {building.strategy}
-                </Text>
-              ) : null}
-            </View>
-          ))}
-        </>
-      ) : null}
-
-      {civilization.uniqueWonders && civilization.uniqueWonders.length > 0 ? (
-        <>
-          <Divider className="my-4" />
-          <Text variant="titleSmall">Unique wonders</Text>
-          {civilization.uniqueWonders.map((wonder) => (
-            <View key={wonder.id} className="mt-2">
-              <Text variant="bodyLarge">{wonder.name}</Text>
-              {wonder.strategy ? (
-                <Text variant="bodyMedium" className="mt-1">
-                  {wonder.strategy}
-                </Text>
-              ) : null}
-            </View>
-          ))}
-        </>
-      ) : null}
-    </Card.Content>
+    <View className="p-6">
+      <View className="flex-row items-start gap-2">
+        <CivilizationLeaderHeader civilization={civilization} />
+        <CivilizationEmblem name={civilization.name} />
+      </View>
+      <View className="mt-4">
+        <CivilizationExpandedDetails
+          civilization={civilization}
+          onViewHistory={() =>
+            router.push({
+              pathname: '/history',
+              params: { civ: civilization.slug },
+            })
+          }
+        />
+      </View>
+    </View>
   );
 }
 
@@ -114,19 +63,18 @@ export default function SelectScreen() {
   };
 
   return (
-    <Screen className="flex-1 p-4">
-      <Text variant="headlineSmall">Civilization selection</Text>
-      <Text variant="bodyMedium" className="mt-1 text-neutral-600 dark:text-neutral-400">
+    <Screen className="flex-1 px-margin-mobile pt-4">
+      <Heading level="md">Civilization selection</Heading>
+      <Text variant="bodyMedium" className="mt-1 text-on-surface-variant">
         {civilizations.length} Vox Populi civilizations
       </Text>
 
-      <View className="mt-4 flex-row gap-2">
+      <View className="mt-4">
         <Searchbar
           placeholder="Search by civ or leader"
           value={query}
           onChangeText={setQuery}
-          className="flex-1"
-          style={{ flex: 1 }}
+          style={{ backgroundColor: '#f5efe9' }}
         />
       </View>
 
@@ -135,9 +83,9 @@ export default function SelectScreen() {
       </Button>
 
       {selection ? (
-        <Card className="mt-4">
+        <ImperialCard className="mt-4 overflow-hidden" selected>
           <CivilizationDetails civilization={selection} />
-        </Card>
+        </ImperialCard>
       ) : null}
 
       <FlatList
@@ -145,23 +93,27 @@ export default function SelectScreen() {
         data={filtered}
         keyExtractor={(item) => item.slug}
         keyboardShouldPersistTaps="handled"
-        ItemSeparatorComponent={Divider}
+        ItemSeparatorComponent={() => <Divider className="bg-outline" />}
         renderItem={({ item }) => {
           const isSelected = selection?.slug === item.slug;
 
           return (
             <Pressable
               onPress={() => setSelection(item)}
-              className={`py-3 ${isSelected ? 'bg-amber-50 dark:bg-amber-950/30' : ''}`}>
-              <Text variant="titleMedium">{item.name}</Text>
-              <Text variant="bodySmall" className="text-neutral-600 dark:text-neutral-400">
+              className={`rounded-md border border-transparent py-3 ${
+                isSelected ? 'border-l-4 border-l-secondary bg-secondary/10 pl-2' : ''
+              }`}>
+              <Text variant="titleMedium" className="text-primary">
+                {item.name}
+              </Text>
+              <Text variant="bodySmall" className="uppercase tracking-wide text-on-surface-variant">
                 {item.leader.name}
               </Text>
             </Pressable>
           );
         }}
         ListEmptyComponent={
-          <Text variant="bodyMedium" className="py-6 text-center text-neutral-600 dark:text-neutral-400">
+          <Text variant="bodyMedium" className="py-6 text-center text-on-surface-variant">
             No civilizations match your search.
           </Text>
         }
