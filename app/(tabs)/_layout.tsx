@@ -1,33 +1,55 @@
-import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Tabs } from 'expo-router';
-import React from 'react';
 
-function TabBarIcon(props: {
-  name: React.ComponentProps<typeof FontAwesome>['name'];
+import { IconSymbol } from '@/components/ui/IconSymbol';
+import { imperialColors, imperialFonts } from '@/constants/theme';
+
+function TabBarIcon({
+  name,
+  color,
+}: {
+  name: 'menu-book' | 'military-tech' | 'history' | 'leaderboard';
   color: string;
 }) {
-  return <FontAwesome size={24} style={{ marginBottom: -2 }} {...props} />;
+  return <IconSymbol name={name} size={24} color={color} />;
 }
 
 export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#b8860b',
-        headerShown: true,
+        tabBarActiveTintColor: imperialColors.secondary,
+        tabBarInactiveTintColor: imperialColors.muted,
+        tabBarStyle: {
+          backgroundColor: imperialColors.surface,
+          borderTopColor: imperialColors.outline,
+          borderTopWidth: 1,
+          borderTopLeftRadius: 9999,
+          borderTopRightRadius: 9999,
+          paddingTop: 8,
+          height: 64,
+        },
+        headerStyle: {
+          backgroundColor: imperialColors.surface,
+        },
+        headerTintColor: imperialColors.primary,
+        headerTitleStyle: {
+          fontFamily: imperialFonts.serifBold,
+          color: imperialColors.primary,
+        },
+        headerShadowVisible: false,
       }}>
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <TabBarIcon name="home" color={color} />,
+          title: 'Library',
+          tabBarIcon: ({ color }) => <TabBarIcon name="menu-book" color={color} />,
         }}
       />
       <Tabs.Screen
         name="select"
         options={{
           title: 'Select',
-          tabBarIcon: ({ color }) => <TabBarIcon name="random" color={color} />,
+          tabBarIcon: ({ color }) => <TabBarIcon name="military-tech" color={color} />,
         }}
       />
       <Tabs.Screen
@@ -40,8 +62,8 @@ export default function TabLayout() {
       <Tabs.Screen
         name="stats"
         options={{
-          title: 'Stats',
-          tabBarIcon: ({ color }) => <TabBarIcon name="bar-chart" color={color} />,
+          title: 'Leaderboard',
+          tabBarIcon: ({ color }) => <TabBarIcon name="leaderboard" color={color} />,
         }}
       />
     </Tabs>
