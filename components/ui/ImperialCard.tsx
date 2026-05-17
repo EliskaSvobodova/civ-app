@@ -19,9 +19,11 @@ export function ImperialCard({
 
   return (
     <View
-      className={`relative overflow-hidden rounded-md border border-outline bg-surface ${stateClass} ${className ?? ''}`}
+      className={`relative rounded-md border border-outline bg-surface ${stateClass} ${className ?? ''}`}
       {...props}>
-      <ParchmentGrain />
+      <View className="pointer-events-none absolute inset-0 overflow-hidden rounded-md">
+        <ParchmentGrain />
+      </View>
       <View className="relative">{children}</View>
     </View>
   );
