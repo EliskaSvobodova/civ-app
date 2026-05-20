@@ -20,6 +20,8 @@ export async function initDatabase(): Promise<AppDatabase> {
     return db;
   }
 
+  // Web must use async open — sync ops time out in the worker busy-loop. Drizzle still
+  // uses sync APIs (migrations at startup); runtime queries on web use async via $client.
   const sqlite =
     Platform.OS === 'web'
       ? await openDatabaseAsync(DATABASE_NAME, OPEN_OPTIONS)
