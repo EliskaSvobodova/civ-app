@@ -1,7 +1,16 @@
+import { router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FlatList, Pressable, View } from 'react-native';
-import { Button, Dialog, Divider, Portal, Searchbar, Text, TextInput } from 'react-native-paper';
-import { router } from 'expo-router';
+import {
+  Button,
+  Checkbox,
+  Dialog,
+  Divider,
+  Portal,
+  Searchbar,
+  Text,
+  TextInput,
+} from 'react-native-paper';
 
 import { CivilizationEmblem } from '@/components/civilization/CivilizationEmblem';
 import { CivilizationExpandedDetails } from '@/components/civilization/CivilizationExpandedDetails';
@@ -50,8 +59,14 @@ export default function SelectScreen() {
   const [newPlayerName, setNewPlayerName] = useState('');
   const [createError, setCreateError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [gamePlayerIds, setGamePlayerIds] = useState<number[]>([]);
   const [query, setQuery] = useState('');
   const [selection, setSelection] = useState<Civilization | null>(null);
+
+  const gamePlayers = useMemo(
+    () => players.filter((player) => gamePlayerIds.includes(player.id)),
+    [players, gamePlayerIds],
+  );
 
   const loadPlayers = useCallback(async () => {
     const list = await getAllPlayers();
@@ -72,6 +87,18 @@ export default function SelectScreen() {
     setCreateModalVisible(false);
     setNewPlayerName('');
     setCreateError(null);
+  };
+
+  const togglePlayerInGame = (playerId: number) => {
+    setGamePlayerIds((current) =>
+      current.includes(playerId)
+        ? current.filter((id) => id !== playerId)
+        : [...current, playerId],
+    );
+  };
+
+  const clearGame = () => {
+    setGamePlayerIds([]);
   };
 
   const handleCreatePlayer = async () => {
@@ -110,24 +137,49 @@ export default function SelectScreen() {
 
   return (
     <Screen className="flex-1 px-margin-mobile pt-4">
-      <Heading level="md">Players</Heading>
-      {players.length > 0 ? (
-        <View className="mt-2 gap-1">
-          {players.map((player) => (
-            <Text key={player.id} variant="bodyLarge" className="text-primary">
-              {player.name}
-            </Text>
-          ))}
-        </View>
-      ) : (
+      <Heading level="md" className="mt-6">
+        New Game
+      </Heading>
+      {players.length === 0 ? (
         <Text variant="bodyMedium" className="mt-1 text-on-surface-variant">
-          No players yet. Create one to get started.
+          Create players above, then add them to a new game.
         </Text>
+      ) : (
+        <>
+          <Text variant="bodyMedium" className="mt-1 text-on-surface-variant">
+            Add players to this game
+          </Text>
+          <View className="mt-2">
+            {players.map((player) => (
+              <Checkbox.Item
+                key={player.id}
+                label={player.name}
+                status={gamePlayerIds.includes(player.id) ? 'checked' : 'unchecked'}
+                onPress={() => togglePlayerInGame(player.id)}
+                labelVariant="bodyLarge"
+              />
+            ))}
+          </View>
+          {gamePlayers.length > 0 ? (
+            <View className="mt-2">
+              <Text variant="bodyMedium" className="text-primary">
+                {gamePlayers.length} player{gamePlayers.length === 1 ? '' : 's'} in game:{' '}
+                {gamePlayers.map((p) => p.name).join(', ')}
+              </Text>
+              <Button mode="text" className="mt-1 self-start" onPress={clearGame}>
+                Clear game
+              </Button>
+            </View>
+          ) : (
+            <Text variant="bodyMedium" className="mt-2 text-on-surface-variant">
+              No players added yet.
+            </Text>
+          )}
+        </>
       )}
       <Button mode="outlined" className="mt-3" onPress={openCreateModal}>
         Create player
       </Button>
-
       <Portal>
         <Dialog visible={createModalVisible} onDismiss={closeCreateModal}>
           <Dialog.Title>Create player</Dialog.Title>
