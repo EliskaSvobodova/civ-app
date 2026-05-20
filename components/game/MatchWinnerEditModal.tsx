@@ -1,0 +1,225 @@
+import { useEffect, useMemo, useState } from 'react';
+import { ScrollView, View } from 'react-native';
+import {
+  Button,
+  Checkbox,
+  Dialog,
+  Divider,
+  Portal,
+  SegmentedButtons,
+  Text,
+} from 'react-native-paper';
+
+import {
+  getAllCivilizations,
+  getCivilizationByKey,
+  type GameHistoryEntry,
+  type GameWinner,
+  type UpdateGameWinnerInput,
+} from '@/services';
+
+type WinnerMode = 'human' | 'ai';
+
+type MatchWinnerEditModalProps = {
+  entry: GameHistoryEntry | null;
+  visible: boolean;
+  onDismiss: () => void;
+  onSave: (gameId: number, winner: UpdateGameWinnerInput) => Promise<void>;
+};
+
+function participantPlayerIds(entry: GameHistoryEntry): number[] {
+  return entry.participants.map((participant) => participant.playerId);
+}
+
+function winnerToMode(winner: GameWinner | null): WinnerMode {
+  return winner?.kind === 'ai' ? 'ai' : 'human';
+}
+
+function winnerToSelectedPlayerIds(
+  entry: GameHistoryEntry,
+  winner: GameWinner | null,
+): number[] {
+  if (winner?.kind === 'human') {
+    return winner.playerIds;
+  }
+  return participantPlayerIds(entry);
+}
+
+function winnerToAiCivilizationKey(winner: GameWinner | null): string | null {
+  return winner?.kind === 'ai' ? winner.civilizationKey : null;
+}
+
+export function MatchWinnerEditModal({
+  entry,
+  visible,
+  onDismiss,
+  onSave,
+}: MatchWinnerEditModalProps) {
+  const [mode, setMode] = useState<WinnerMode>('human');
+  const [selectedPlayerIds, setSelectedPlayerIds] = useState<number[]>([]);
+  const [selectedAiCivKey, setSelectedAiCivKey] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  const participantCivKeys = useMemo(() => {
+    if (!entry) return new Set<string>();
+    return new Set(entry.participants.map((participant) => participant.civilizationKey));
+  }, [entry]);
+
+  const aiCivilizationOptions = useMemo(() => {
+    return getAllCivilizations().filter((civ) => !participantCivKeys.has(civ.slug));
+  }, [participantCivKeys]);
+
+  useEffect(() => {
+    if (!entry || !visible) {
+      return;
+    }
+    const winner = entry.winner;
+    setMode(winnerToMode(winner));
+    setSelectedPlayerIds(winnerToSelectedPlayerIds(entry, winner));
+    setSelectedAiCivKey(winnerToAiCivilizationKey(winner));
+    setSaveError(null);
+  }, [entry, visible]);
+
+  const togglePlayer = (playerId: number) => {
+    setSelectedPlayerIds((current) =>
+      current.includes(playerId)
+        ? current.filter((id) => id !== playerId)
+        : [...current, playerId],
+    );
+  };
+
+  const selectAllPlayers = () => {
+    if (!entry) return;
+    setSelectedPlayerIds(participantPlayerIds(entry));
+  };
+
+  const handleSave = async () => {
+    if (!entry) return;
+
+    if (mode === 'human') {
+      if (selectedPlayerIds.length === 0) {
+        setSaveError('Select at least one winning player.');
+        return;
+      }
+    } else if (!selectedAiCivKey) {
+      setSaveError('Select an AI civilization.');
+      return;
+    }
+
+    const winner: UpdateGameWinnerInput =
+      mode === 'human'
+        ? { kind: 'human', playerIds: selectedPlayerIds }
+        : {
+            kind: 'ai',
+            civilizationKey: selectedAiCivKey!,
+            leaderKey:
+              getCivilizationByKey(selectedAiCivKey!)?.leader.id ?? selectedAiCivKey!,
+          };
+
+    setIsSaving(true);
+    setSaveError(null);
+    try {
+      await onSave(entry.id, winner);
+      onDismiss();
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'Failed to save winner');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (!entry) {
+    return null;
+  }
+
+  return (
+    <Portal>
+      <Dialog visible={visible} onDismiss={onDismiss} style={{ maxHeight: '90%' }}>
+        <Dialog.Title>Set match winner</Dialog.Title>
+        <Dialog.ScrollArea style={{ paddingHorizontal: 0 }}>
+          <ScrollView keyboardShouldPersistTaps="handled">
+            <View className="gap-4 px-6 py-2">
+              <SegmentedButtons
+                value={mode}
+                onValueChange={(value) => setMode(value as WinnerMode)}
+                buttons={[
+                  { value: 'human', label: 'Players' },
+                  { value: 'ai', label: 'AI civ' },
+                ]}
+              />
+
+              {mode === 'human' ? (
+                <View className="gap-2">
+                  <Text variant="bodyMedium" className="text-on-surface-variant">
+                    Choose one player or several as a winning team.
+                  </Text>
+                  <Button mode="text" className="self-start" onPress={selectAllPlayers}>
+                    Select all players (team win)
+                  </Button>
+                  {entry.participants.map((participant) => (
+                    <Checkbox.Item
+                      key={participant.playerId}
+                      label={participant.playerName}
+                      status={
+                        selectedPlayerIds.includes(participant.playerId)
+                          ? 'checked'
+                          : 'unchecked'
+                      }
+                      onPress={() => togglePlayer(participant.playerId)}
+                    />
+                  ))}
+                </View>
+              ) : (
+                <View className="gap-2">
+                  <Text variant="bodyMedium" className="text-on-surface-variant">
+                    Another civilization controlled by AI won this match.
+                  </Text>
+                  {aiCivilizationOptions.length === 0 ? (
+                    <Text variant="bodySmall" className="text-on-surface-variant">
+                      Every civilization in the dataset is already in this match.
+                    </Text>
+                  ) : (
+                    aiCivilizationOptions.map((civilization, index) => (
+                      <View key={civilization.slug}>
+                        {index > 0 ? <Divider className="bg-outline" /> : null}
+                        <Checkbox.Item
+                          label={`${civilization.name} (${civilization.leader.name})`}
+                          status={
+                            selectedAiCivKey === civilization.slug ? 'checked' : 'unchecked'
+                          }
+                          onPress={() => setSelectedAiCivKey(civilization.slug)}
+                        />
+                      </View>
+                    ))
+                  )}
+                </View>
+              )}
+
+              {saveError ? (
+                <Text variant="bodySmall" className="text-red-700">
+                  {saveError}
+                </Text>
+              ) : null}
+            </View>
+          </ScrollView>
+        </Dialog.ScrollArea>
+        <Dialog.Actions>
+          <Button onPress={onDismiss} disabled={isSaving}>
+            Cancel
+          </Button>
+          <Button
+            mode="contained"
+            onPress={handleSave}
+            loading={isSaving}
+            disabled={
+              isSaving ||
+              (mode === 'human' ? selectedPlayerIds.length === 0 : !selectedAiCivKey)
+            }>
+            Save
+          </Button>
+        </Dialog.Actions>
+      </Dialog>
+    </Portal>
+  );
+}

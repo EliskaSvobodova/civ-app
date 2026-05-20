@@ -20,24 +20,38 @@ export type CreateGameAssignment = {
 };
 
 export type GameHistoryParticipant = {
+  playerId: number;
   playerName: string;
   civilizationName: string;
   leaderName: string;
   civilizationKey: string;
 };
 
+export type GameWinner =
+  | { kind: 'human'; playerIds: number[] }
+  | { kind: 'ai'; civilizationKey: string; leaderKey: string };
+
+export type UpdateGameWinnerInput = GameWinner;
+
 export type GameHistoryEntry = {
   id: number;
   startedAt: string;
   participants: GameHistoryParticipant[];
+  winner: GameWinner | null;
+  winnerLabel: string | null;
 };
 
 type GameHistoryRow = {
   game_id: number;
   created_at: string;
+  player_id: number;
   player_name: string;
   civilization_key: string;
   leader_key: string;
+  winner_kind: string | null;
+  winner_player_ids: string | null;
+  winner_civilization_key: string | null;
+  winner_leader_key: string | null;
 };
 
 type GameRow = {
@@ -50,6 +64,10 @@ type GameRow = {
   score: number | null;
   turn_count: number | null;
   won: number | null;
+  winner_kind: string | null;
+  winner_player_ids: string | null;
+  winner_civilization_key: string | null;
+  winner_leader_key: string | null;
   notes: string | null;
   played_at: string;
   created_at: string;
@@ -74,6 +92,10 @@ function mapGameRow(row: GameRow): Game {
     score: row.score,
     turnCount: row.turn_count,
     won: row.won === null ? null : Boolean(row.won),
+    winnerKind: row.winner_kind,
+    winnerPlayerIds: row.winner_player_ids,
+    winnerCivilizationKey: row.winner_civilization_key,
+    winnerLeaderKey: row.winner_leader_key,
     notes: row.notes,
     playedAt: row.played_at,
     createdAt: row.created_at,
@@ -94,13 +116,80 @@ function useAsyncSqlite(): boolean {
   return Platform.OS === 'web';
 }
 
+function parseWinnerPlayerIds(raw: string | null): number[] {
+  if (!raw) {
+    return [];
+  }
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+    return parsed.filter((value): value is number => typeof value === 'number');
+  } catch {
+    return [];
+  }
+}
+
+function serializeWinnerPlayerIds(playerIds: number[]): string {
+  return JSON.stringify([...new Set(playerIds)].sort((a, b) => a - b));
+}
+
+function parseWinnerFromRow(row: GameHistoryRow): GameWinner | null {
+  if (row.winner_kind === 'human') {
+    const playerIds = parseWinnerPlayerIds(row.winner_player_ids);
+    return playerIds.length > 0 ? { kind: 'human', playerIds } : null;
+  }
+  if (row.winner_kind === 'ai' && row.winner_civilization_key) {
+    return {
+      kind: 'ai',
+      civilizationKey: row.winner_civilization_key,
+      leaderKey: row.winner_leader_key ?? row.winner_civilization_key,
+    };
+  }
+  return null;
+}
+
+function formatWinnerLabel(
+  winner: GameWinner | null,
+  participants: GameHistoryParticipant[],
+): string | null {
+  if (!winner) {
+    return null;
+  }
+
+  if (winner.kind === 'ai') {
+    const civilization = getCivilizationByKey(winner.civilizationKey);
+    const civName = civilization?.name ?? winner.civilizationKey;
+    const leaderName = civilization?.leader.name ?? winner.leaderKey;
+    return `AI: ${civName} (${leaderName})`;
+  }
+
+  const names = winner.playerIds
+    .map((playerId) => participants.find((participant) => participant.playerId === playerId))
+    .filter((participant): participant is GameHistoryParticipant => participant != null)
+    .map((participant) => participant.playerName);
+
+  if (names.length === 0) {
+    return null;
+  }
+
+  if (names.length === 1) {
+    return names[0];
+  }
+
+  return `Team: ${names.join(', ')}`;
+}
+
 function resolveParticipant(
+  playerId: number,
   playerName: string,
   civilizationKey: string,
   leaderKey: string,
 ): GameHistoryParticipant {
   const civilization = getCivilizationByKey(civilizationKey);
   return {
+    playerId,
     playerName,
     civilizationKey,
     civilizationName: civilization?.name ?? civilizationKey,
@@ -114,16 +203,28 @@ function groupGameHistoryRows(rows: GameHistoryRow[]): GameHistoryEntry[] {
   for (const row of rows) {
     let entry = byGame.get(row.game_id);
     if (!entry) {
+      const winner = parseWinnerFromRow(row);
       entry = {
         id: row.game_id,
         startedAt: row.created_at,
         participants: [],
+        winner,
+        winnerLabel: null,
       };
       byGame.set(row.game_id, entry);
     }
     entry.participants.push(
-      resolveParticipant(row.player_name, row.civilization_key, row.leader_key),
+      resolveParticipant(
+        row.player_id,
+        row.player_name,
+        row.civilization_key,
+        row.leader_key,
+      ),
     );
+  }
+
+  for (const entry of byGame.values()) {
+    entry.winnerLabel = formatWinnerLabel(entry.winner, entry.participants);
   }
 
   return Array.from(byGame.values());
@@ -133,8 +234,9 @@ export async function getGameHistory(): Promise<GameHistoryEntry[]> {
   if (useAsyncSqlite()) {
     const sqlite = getDatabase().$client;
     const rows = await sqlite.getAllAsync<GameHistoryRow>(
-      `SELECT g.id AS game_id, g.created_at, p.name AS player_name,
-              gp.civilization_key, gp.leader_key
+      `SELECT g.id AS game_id, g.created_at, p.id AS player_id, p.name AS player_name,
+              gp.civilization_key, gp.leader_key,
+              g.winner_kind, g.winner_player_ids, g.winner_civilization_key, g.winner_leader_key
        FROM games g
        INNER JOIN game_players gp ON gp.game_id = g.id
        INNER JOIN players p ON p.id = gp.player_id
@@ -148,9 +250,14 @@ export async function getGameHistory(): Promise<GameHistoryEntry[]> {
     .select({
       gameId: games.id,
       createdAt: games.createdAt,
+      playerId: players.id,
       playerName: players.name,
       civilizationKey: gamePlayers.civilizationKey,
       leaderKey: gamePlayers.leaderKey,
+      winnerKind: games.winnerKind,
+      winnerPlayerIds: games.winnerPlayerIds,
+      winnerCivilizationKey: games.winnerCivilizationKey,
+      winnerLeaderKey: games.winnerLeaderKey,
     })
     .from(games)
     .innerJoin(gamePlayers, eq(gamePlayers.gameId, games.id))
@@ -161,11 +268,61 @@ export async function getGameHistory(): Promise<GameHistoryEntry[]> {
     rows.map((row) => ({
       game_id: row.gameId,
       created_at: row.createdAt,
+      player_id: row.playerId,
       player_name: row.playerName,
       civilization_key: row.civilizationKey,
       leader_key: row.leaderKey,
+      winner_kind: row.winnerKind,
+      winner_player_ids: row.winnerPlayerIds,
+      winner_civilization_key: row.winnerCivilizationKey,
+      winner_leader_key: row.winnerLeaderKey,
     })),
   );
+}
+
+export async function updateGameWinner(
+  gameId: number,
+  winner: UpdateGameWinnerInput,
+): Promise<void> {
+  const winnerKind = winner.kind;
+  const winnerPlayerIds =
+    winner.kind === 'human' ? serializeWinnerPlayerIds(winner.playerIds) : null;
+  const winnerCivilizationKey = winner.kind === 'ai' ? winner.civilizationKey : null;
+  const winnerLeaderKey = winner.kind === 'ai' ? winner.leaderKey : null;
+
+  if (useAsyncSqlite()) {
+    const sqlite = getDatabase().$client;
+    const result = await sqlite.runAsync(
+      `UPDATE games
+       SET winner_kind = ?, winner_player_ids = ?, winner_civilization_key = ?, winner_leader_key = ?
+       WHERE id = ?`,
+      winnerKind,
+      winnerPlayerIds,
+      winnerCivilizationKey,
+      winnerLeaderKey,
+      gameId,
+    );
+    if (result.changes === 0) {
+      throw new Error('Game not found');
+    }
+    return;
+  }
+
+  const db = getDatabase();
+  const updated = await db
+    .update(games)
+    .set({
+      winnerKind,
+      winnerPlayerIds,
+      winnerCivilizationKey,
+      winnerLeaderKey,
+    })
+    .where(eq(games.id, gameId))
+    .returning({ id: games.id });
+
+  if (updated.length === 0) {
+    throw new Error('Game not found');
+  }
 }
 
 export async function createGame(
