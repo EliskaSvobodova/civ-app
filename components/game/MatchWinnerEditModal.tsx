@@ -8,6 +8,7 @@ import {
   Portal,
   SegmentedButtons,
   Text,
+  TextInput,
 } from 'react-native-paper';
 
 import {
@@ -15,8 +16,13 @@ import {
   getCivilizationByKey,
   type GameHistoryEntry,
   type GameWinner,
-  type UpdateGameWinnerInput,
+  type UpdateGameMatchInput,
 } from '@/services';
+import {
+  isoToLocalDateInput,
+  isoToLocalTimeInput,
+  parseLocalDateTimeToIso,
+} from '@/utils/gameDateTime';
 
 type WinnerMode = 'human' | 'ai';
 
@@ -24,7 +30,7 @@ type MatchWinnerEditModalProps = {
   entry: GameHistoryEntry | null;
   visible: boolean;
   onDismiss: () => void;
-  onSave: (gameId: number, winner: UpdateGameWinnerInput) => Promise<void>;
+  onSave: (gameId: number, input: UpdateGameMatchInput) => Promise<void>;
 };
 
 function participantPlayerIds(entry: GameHistoryEntry): number[] {
@@ -55,6 +61,8 @@ export function MatchWinnerEditModal({
   onDismiss,
   onSave,
 }: MatchWinnerEditModalProps) {
+  const [startDate, setStartDate] = useState('');
+  const [startTime, setStartTime] = useState('');
   const [mode, setMode] = useState<WinnerMode>('human');
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<number[]>([]);
   const [selectedAiCivKey, setSelectedAiCivKey] = useState<string | null>(null);
@@ -75,6 +83,8 @@ export function MatchWinnerEditModal({
       return;
     }
     const winner = entry.winner;
+    setStartDate(isoToLocalDateInput(entry.startedAt));
+    setStartTime(isoToLocalTimeInput(entry.startedAt));
     setMode(winnerToMode(winner));
     setSelectedPlayerIds(winnerToSelectedPlayerIds(entry, winner));
     setSelectedAiCivKey(winnerToAiCivilizationKey(winner));
@@ -107,7 +117,20 @@ export function MatchWinnerEditModal({
       return;
     }
 
-    const winner: UpdateGameWinnerInput =
+    if (!startDate.trim() || !startTime.trim()) {
+      setSaveError('Enter both date and time for when the game started.');
+      return;
+    }
+
+    let startedAt: string;
+    try {
+      startedAt = parseLocalDateTimeToIso(startDate, startTime);
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'Invalid start date or time');
+      return;
+    }
+
+    const winner: UpdateGameMatchInput['winner'] =
       mode === 'human'
         ? { kind: 'human', playerIds: selectedPlayerIds }
         : {
@@ -120,10 +143,10 @@ export function MatchWinnerEditModal({
     setIsSaving(true);
     setSaveError(null);
     try {
-      await onSave(entry.id, winner);
+      await onSave(entry.id, { startedAt, winner });
       onDismiss();
     } catch (error) {
-      setSaveError(error instanceof Error ? error.message : 'Failed to save winner');
+      setSaveError(error instanceof Error ? error.message : 'Failed to save match');
     } finally {
       setIsSaving(false);
     }
@@ -136,10 +159,35 @@ export function MatchWinnerEditModal({
   return (
     <Portal>
       <Dialog visible={visible} onDismiss={onDismiss} style={{ maxHeight: '90%' }}>
-        <Dialog.Title>Set match winner</Dialog.Title>
+        <Dialog.Title>Edit match</Dialog.Title>
         <Dialog.ScrollArea style={{ paddingHorizontal: 0 }}>
           <ScrollView keyboardShouldPersistTaps="handled">
             <View className="gap-4 px-6 py-2">
+              <View className="gap-2">
+                <Text variant="labelMedium" className="uppercase tracking-wide text-primary">
+                  Game start
+                </Text>
+                <TextInput
+                  label="Date"
+                  value={startDate}
+                  onChangeText={setStartDate}
+                  mode="outlined"
+                  placeholder="YYYY-MM-DD"
+                  disabled={isSaving}
+                />
+                <TextInput
+                  label="Time"
+                  value={startTime}
+                  onChangeText={setStartTime}
+                  mode="outlined"
+                  placeholder="HH:MM"
+                  disabled={isSaving}
+                />
+              </View>
+              <Divider className="bg-outline" />
+              <Text variant="labelMedium" className="uppercase tracking-wide text-primary">
+                Winner
+              </Text>
               <SegmentedButtons
                 value={mode}
                 onValueChange={(value) => setMode(value as WinnerMode)}
@@ -214,6 +262,8 @@ export function MatchWinnerEditModal({
             loading={isSaving}
             disabled={
               isSaving ||
+              !startDate.trim() ||
+              !startTime.trim() ||
               (mode === 'human' ? selectedPlayerIds.length === 0 : !selectedAiCivKey)
             }>
             Save

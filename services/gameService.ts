@@ -33,6 +33,11 @@ export type GameWinner =
 
 export type UpdateGameWinnerInput = GameWinner;
 
+export type UpdateGameMatchInput = {
+  startedAt: string;
+  winner: UpdateGameWinnerInput;
+};
+
 export type GameHistoryEntry = {
   id: number;
   startedAt: string;
@@ -43,7 +48,7 @@ export type GameHistoryEntry = {
 
 type GameHistoryRow = {
   game_id: number;
-  created_at: string;
+  played_at: string;
   player_id: number;
   player_name: string;
   civilization_key: string;
@@ -206,7 +211,7 @@ function groupGameHistoryRows(rows: GameHistoryRow[]): GameHistoryEntry[] {
       const winner = parseWinnerFromRow(row);
       entry = {
         id: row.game_id,
-        startedAt: row.created_at,
+        startedAt: row.played_at,
         participants: [],
         winner,
         winnerLabel: null,
@@ -234,13 +239,13 @@ export async function getGameHistory(): Promise<GameHistoryEntry[]> {
   if (useAsyncSqlite()) {
     const sqlite = getDatabase().$client;
     const rows = await sqlite.getAllAsync<GameHistoryRow>(
-      `SELECT g.id AS game_id, g.created_at, p.id AS player_id, p.name AS player_name,
+      `SELECT g.id AS game_id, g.played_at, p.id AS player_id, p.name AS player_name,
               gp.civilization_key, gp.leader_key,
               g.winner_kind, g.winner_player_ids, g.winner_civilization_key, g.winner_leader_key
        FROM games g
        INNER JOIN game_players gp ON gp.game_id = g.id
        INNER JOIN players p ON p.id = gp.player_id
-       ORDER BY g.created_at DESC, p.name ASC`,
+       ORDER BY g.played_at DESC, p.name ASC`,
     );
     return groupGameHistoryRows(rows);
   }
@@ -249,7 +254,7 @@ export async function getGameHistory(): Promise<GameHistoryEntry[]> {
   const rows = await db
     .select({
       gameId: games.id,
-      createdAt: games.createdAt,
+      playedAt: games.playedAt,
       playerId: players.id,
       playerName: players.name,
       civilizationKey: gamePlayers.civilizationKey,
@@ -262,12 +267,12 @@ export async function getGameHistory(): Promise<GameHistoryEntry[]> {
     .from(games)
     .innerJoin(gamePlayers, eq(gamePlayers.gameId, games.id))
     .innerJoin(players, eq(players.id, gamePlayers.playerId))
-    .orderBy(desc(games.createdAt), players.name);
+    .orderBy(desc(games.playedAt), players.name);
 
   return groupGameHistoryRows(
     rows.map((row) => ({
       game_id: row.gameId,
-      created_at: row.createdAt,
+      played_at: row.playedAt,
       player_id: row.playerId,
       player_name: row.playerName,
       civilization_key: row.civilizationKey,
@@ -280,15 +285,22 @@ export async function getGameHistory(): Promise<GameHistoryEntry[]> {
   );
 }
 
+function winnerFields(winner: UpdateGameWinnerInput) {
+  return {
+    winnerKind: winner.kind,
+    winnerPlayerIds:
+      winner.kind === 'human' ? serializeWinnerPlayerIds(winner.playerIds) : null,
+    winnerCivilizationKey: winner.kind === 'ai' ? winner.civilizationKey : null,
+    winnerLeaderKey: winner.kind === 'ai' ? winner.leaderKey : null,
+  };
+}
+
 export async function updateGameWinner(
   gameId: number,
   winner: UpdateGameWinnerInput,
 ): Promise<void> {
-  const winnerKind = winner.kind;
-  const winnerPlayerIds =
-    winner.kind === 'human' ? serializeWinnerPlayerIds(winner.playerIds) : null;
-  const winnerCivilizationKey = winner.kind === 'ai' ? winner.civilizationKey : null;
-  const winnerLeaderKey = winner.kind === 'ai' ? winner.leaderKey : null;
+  const { winnerKind, winnerPlayerIds, winnerCivilizationKey, winnerLeaderKey } =
+    winnerFields(winner);
 
   if (useAsyncSqlite()) {
     const sqlite = getDatabase().$client;
@@ -312,6 +324,77 @@ export async function updateGameWinner(
   const updated = await db
     .update(games)
     .set({
+      winnerKind,
+      winnerPlayerIds,
+      winnerCivilizationKey,
+      winnerLeaderKey,
+    })
+    .where(eq(games.id, gameId))
+    .returning({ id: games.id });
+
+  if (updated.length === 0) {
+    throw new Error('Game not found');
+  }
+}
+
+export async function updateGameStartedAt(gameId: number, startedAt: string): Promise<void> {
+  if (useAsyncSqlite()) {
+    const sqlite = getDatabase().$client;
+    const result = await sqlite.runAsync(
+      `UPDATE games SET played_at = ? WHERE id = ?`,
+      startedAt,
+      gameId,
+    );
+    if (result.changes === 0) {
+      throw new Error('Game not found');
+    }
+    return;
+  }
+
+  const db = getDatabase();
+  const updated = await db
+    .update(games)
+    .set({ playedAt: startedAt })
+    .where(eq(games.id, gameId))
+    .returning({ id: games.id });
+
+  if (updated.length === 0) {
+    throw new Error('Game not found');
+  }
+}
+
+export async function updateGameMatch(
+  gameId: number,
+  input: UpdateGameMatchInput,
+): Promise<void> {
+  const { winnerKind, winnerPlayerIds, winnerCivilizationKey, winnerLeaderKey } =
+    winnerFields(input.winner);
+
+  if (useAsyncSqlite()) {
+    const sqlite = getDatabase().$client;
+    const result = await sqlite.runAsync(
+      `UPDATE games
+       SET played_at = ?, winner_kind = ?, winner_player_ids = ?,
+           winner_civilization_key = ?, winner_leader_key = ?
+       WHERE id = ?`,
+      input.startedAt,
+      winnerKind,
+      winnerPlayerIds,
+      winnerCivilizationKey,
+      winnerLeaderKey,
+      gameId,
+    );
+    if (result.changes === 0) {
+      throw new Error('Game not found');
+    }
+    return;
+  }
+
+  const db = getDatabase();
+  const updated = await db
+    .update(games)
+    .set({
+      playedAt: input.startedAt,
       winnerKind,
       winnerPlayerIds,
       winnerCivilizationKey,
