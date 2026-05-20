@@ -1,3 +1,25 @@
+diff --git a/node_modules/@react-navigation/elements/lib/module/Screen.js b/node_modules/@react-navigation/elements/lib/module/Screen.js
+index e4ff174..38ed0a7 100644
+--- a/node_modules/@react-navigation/elements/lib/module/Screen.js
++++ b/node_modules/@react-navigation/elements/lib/module/Screen.js
+@@ -52,7 +52,6 @@ export function Screen(props) {
+         }] : null],
+         children: /*#__PURE__*/_jsx(View, {
+           ref: headerRef,
+-          pointerEvents: "box-none",
+           onLayout: e => {
+             const {
+               height
+@@ -82,7 +81,8 @@ const styles = StyleSheet.create({
+     flex: 1
+   },
+   header: {
+-    zIndex: 1
++    zIndex: 1,
++    pointerEvents: 'box-none'
+   },
+   absolute: {
+     position: 'absolute',
 diff --git a/node_modules/@react-navigation/elements/src/Header/Header.tsx b/node_modules/@react-navigation/elements/src/Header/Header.tsx
 index ff00094..48bebcb 100644
 --- a/node_modules/@react-navigation/elements/src/Header/Header.tsx

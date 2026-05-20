@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { Platform, Pressable, View } from 'react-native';
 import { router } from 'expo-router';
 
 import { IconSymbol } from '@/components/ui/IconSymbol';
@@ -22,7 +22,8 @@ export function CivilizationListItem({ civilization }: { civilization: Civilizat
         onPress={() => setExpanded((value) => !value)}
         accessibilityRole="button"
         accessibilityState={{ expanded }}
-        className="p-4">
+        className="p-4"
+        style={Platform.OS === 'web' ? { cursor: 'pointer' } : undefined}>
         <View className="flex-row items-start gap-2">
           <CivilizationLeaderHeader civilization={civilization} />
           <CivilizationEmblem name={civilization.name} />

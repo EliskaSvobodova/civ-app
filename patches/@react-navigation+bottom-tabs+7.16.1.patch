@@ -21,16 +21,19 @@ index b4c78af..166d4c4 100644
      }), /*#__PURE__*/_jsx(View, {
        role: "tablist",
 diff --git a/node_modules/@react-navigation/bottom-tabs/lib/module/views/BottomTabView.js b/node_modules/@react-navigation/bottom-tabs/lib/module/views/BottomTabView.js
-index 7f3b7bd..17a1d4c 100644
+index 7f3b7bd..76a8f54 100644
 --- a/node_modules/@react-navigation/bottom-tabs/lib/module/views/BottomTabView.js
 +++ b/node_modules/@react-navigation/bottom-tabs/lib/module/views/BottomTabView.js
-@@ -217,12 +217,13 @@ export function BottomTabView(props) {
+@@ -217,12 +217,15 @@ export function BottomTabView(props) {
          return /*#__PURE__*/_jsx(MaybeScreen, {
            style: [StyleSheet.absoluteFill, {
              zIndex: isFocused ? 0 : -1
+-          }],
 +          }, {
-+            pointerEvents: isFocused ? 'box-none' : 'none'
-           }],
++            pointerEvents: isFocused ? 'auto' : 'none'
++          }, Platform.OS === 'web' && !isFocused ? {
++            display: 'none'
++          } : null],
            active: activityState,
            enabled: detachInactiveScreens,
            freezeOnBlur: freezeOnBlur,
@@ -61,10 +64,10 @@ index ba17a4a..26e2b0a 100644
        </View>
        <View
 diff --git a/node_modules/@react-navigation/bottom-tabs/src/views/BottomTabView.tsx b/node_modules/@react-navigation/bottom-tabs/src/views/BottomTabView.tsx
-index 3476534..40a535f 100644
+index 3476534..422ea61 100644
 --- a/node_modules/@react-navigation/bottom-tabs/src/views/BottomTabView.tsx
 +++ b/node_modules/@react-navigation/bottom-tabs/src/views/BottomTabView.tsx
-@@ -318,12 +318,15 @@ export function BottomTabView(props: Props) {
+@@ -318,12 +318,17 @@ export function BottomTabView(props: Props) {
            return (
              <MaybeScreen
                key={route.key}
@@ -72,7 +75,9 @@ index 3476534..40a535f 100644
 +              style={[
 +                StyleSheet.absoluteFill,
 +                { zIndex: isFocused ? 0 : -1 },
-+                { pointerEvents: isFocused ? 'box-none' : 'none' },
++                { pointerEvents: isFocused ? 'auto' : 'none' },
++                // On web, pointerEvents:none does not block children with pointer-events:auto.
++                Platform.OS === 'web' && !isFocused ? { display: 'none' } : null,
 +              ]}
                active={activityState}
                enabled={detachInactiveScreens}
