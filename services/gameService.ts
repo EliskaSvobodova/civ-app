@@ -363,6 +363,29 @@ export async function updateGameStartedAt(gameId: number, startedAt: string): Pr
   }
 }
 
+export async function deleteGame(gameId: number): Promise<void> {
+  if (useAsyncSqlite()) {
+    const sqlite = getDatabase().$client;
+    await sqlite.runAsync(`DELETE FROM game_players WHERE game_id = ?`, gameId);
+    const result = await sqlite.runAsync(`DELETE FROM games WHERE id = ?`, gameId);
+    if (result.changes === 0) {
+      throw new Error('Game not found');
+    }
+    return;
+  }
+
+  const db = getDatabase();
+  await db.delete(gamePlayers).where(eq(gamePlayers.gameId, gameId));
+  const deleted = await db
+    .delete(games)
+    .where(eq(games.id, gameId))
+    .returning({ id: games.id });
+
+  if (deleted.length === 0) {
+    throw new Error('Game not found');
+  }
+}
+
 export async function updateGameMatch(
   gameId: number,
   input: UpdateGameMatchInput,

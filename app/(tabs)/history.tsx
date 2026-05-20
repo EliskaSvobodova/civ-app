@@ -1,13 +1,14 @@
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
-import { Divider, IconButton, Text } from 'react-native-paper';
+import { Button, Dialog, Divider, IconButton, Portal, Text } from 'react-native-paper';
 
 import { MatchWinnerEditModal } from '@/components/game/MatchWinnerEditModal';
 import { Heading } from '@/components/ui/Heading';
 import { ImperialCard } from '@/components/ui/ImperialCard';
 import { Screen } from '@/components/ui/Screen';
 import {
+  deleteGame,
   getGameHistory,
   updateGameMatch,
   type GameHistoryEntry,
@@ -19,9 +20,8 @@ function formatStartedAt(iso: string): string {
   if (Number.isNaN(date.getTime())) {
     return iso;
   }
-  return date.toLocaleString(undefined, {
+  return date.toLocaleDateString(undefined, {
     dateStyle: 'medium',
-    timeStyle: 'short',
   });
 }
 
@@ -29,6 +29,8 @@ export default function HistoryScreen() {
   const { civ } = useLocalSearchParams<{ civ?: string }>();
   const [entries, setEntries] = useState<GameHistoryEntry[]>([]);
   const [editingEntry, setEditingEntry] = useState<GameHistoryEntry | null>(null);
+  const [entryToRemove, setEntryToRemove] = useState<GameHistoryEntry | null>(null);
+  const [isRemoving, setIsRemoving] = useState(false);
 
   const loadHistory = useCallback(async () => {
     try {
@@ -55,6 +57,22 @@ export default function HistoryScreen() {
   const handleSaveMatch = async (gameId: number, input: UpdateGameMatchInput) => {
     await updateGameMatch(gameId, input);
     await loadHistory();
+  };
+
+  const handleConfirmRemove = async () => {
+    if (!entryToRemove) return;
+
+    setIsRemoving(true);
+    try {
+      await deleteGame(entryToRemove.id);
+      if (editingEntry?.id === entryToRemove.id) {
+        setEditingEntry(null);
+      }
+      setEntryToRemove(null);
+      await loadHistory();
+    } finally {
+      setIsRemoving(false);
+    }
   };
 
   return (
@@ -90,12 +108,20 @@ export default function HistoryScreen() {
                         {formatStartedAt(entry.startedAt)}
                       </Text>
                     </View>
-                    <IconButton
-                      icon="pencil"
-                      size={20}
-                      onPress={() => setEditingEntry(entry)}
-                      accessibilityLabel="Edit match"
-                    />
+                    <View className="flex-row">
+                      <IconButton
+                        icon="pencil"
+                        size={20}
+                        onPress={() => setEditingEntry(entry)}
+                        accessibilityLabel="Edit match"
+                      />
+                      <IconButton
+                        icon="delete"
+                        size={20}
+                        onPress={() => setEntryToRemove(entry)}
+                        accessibilityLabel="Remove match"
+                      />
+                    </View>
                   </View>
                   {entry.winnerLabel ? (
                     <>
@@ -140,6 +166,30 @@ export default function HistoryScreen() {
         onDismiss={() => setEditingEntry(null)}
         onSave={handleSaveMatch}
       />
+      <Portal>
+        <Dialog
+          visible={entryToRemove != null}
+          onDismiss={() => !isRemoving && setEntryToRemove(null)}>
+          <Dialog.Title>Remove match?</Dialog.Title>
+          <Dialog.Content>
+            <Text variant="bodyMedium">
+              This will permanently delete this game from your history.
+            </Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setEntryToRemove(null)} disabled={isRemoving}>
+              Cancel
+            </Button>
+            <Button
+              mode="contained"
+              onPress={handleConfirmRemove}
+              loading={isRemoving}
+              disabled={isRemoving}>
+              Remove
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
     </Screen>
   );
 }
