@@ -15,6 +15,7 @@ import { Heading } from '@/components/ui/Heading';
 import { ImperialCard } from '@/components/ui/ImperialCard';
 import { Screen } from '@/components/ui/Screen';
 import {
+  createGame,
   createPlayer,
   getAllCivilizations,
   getAllPlayers,
@@ -57,6 +58,31 @@ function assignCivilizationsForPlayers(
   return next;
 }
 
+function rerollCivilizationForPlayer(
+  playerId: number,
+  assignments: Record<number, Civilization>,
+  civilizations: Civilization[],
+): Civilization | null {
+  const current = assignments[playerId];
+  if (!current) return null;
+
+  const usedByOthers = new Set(
+    Object.entries(assignments)
+      .filter(([id]) => Number(id) !== playerId)
+      .map(([, civ]) => civ.slug),
+  );
+
+  let pool = civilizations.filter(
+    (civ) => civ.slug !== current.slug && !usedByOthers.has(civ.slug),
+  );
+  if (pool.length === 0) {
+    pool = civilizations.filter((civ) => civ.slug !== current.slug);
+  }
+  if (pool.length === 0) return current;
+
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
 export default function SelectScreen() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [createModalVisible, setCreateModalVisible] = useState(false);
@@ -67,6 +93,8 @@ export default function SelectScreen() {
   const [civilizationAssignments, setCivilizationAssignments] = useState<
     Record<number, Civilization>
   >({});
+  const [commitError, setCommitError] = useState<string | null>(null);
+  const [isCommitting, setIsCommitting] = useState(false);
   const civilizations = useMemo(() => getAllCivilizations(), []);
 
   const gamePlayers = useMemo(
@@ -118,6 +146,34 @@ export default function SelectScreen() {
       assignCivilizationsForPlayers(gamePlayerIds, previous, civilizations),
     );
   }, [gamePlayerIds, civilizations]);
+
+  const handleReroll = (playerId: number) => {
+    setCivilizationAssignments((previous) => {
+      const pick = rerollCivilizationForPlayer(playerId, previous, civilizations);
+      if (!pick) return previous;
+      return { ...previous, [playerId]: pick };
+    });
+  };
+
+  const handleCommitGame = async () => {
+    setCommitError(null);
+    setIsCommitting(true);
+    try {
+      const assignments = gamePlayers.map((player) => {
+        const civilization = civilizationAssignments[player.id];
+        if (!civilization) {
+          throw new Error(`Missing civilization for ${player.name}`);
+        }
+        return { playerId: player.id, civilization };
+      });
+      await createGame(assignments);
+      clearGame();
+    } catch (error) {
+      setCommitError(error instanceof Error ? error.message : 'Failed to commit game');
+    } finally {
+      setIsCommitting(false);
+    }
+  };
 
   const handleCreatePlayer = async () => {
     setCreateError(null);
@@ -242,6 +298,13 @@ export default function SelectScreen() {
                         className="uppercase tracking-wide text-on-surface-variant">
                         {civilization.leader.name}
                       </Text>
+                      <Button
+                        mode="outlined"
+                        compact
+                        className="mt-2 self-start"
+                        onPress={() => handleReroll(player.id)}>
+                        Reroll
+                      </Button>
                     </View>
                     <CivilizationEmblem name={civilization.name} />
                   </View>
@@ -249,6 +312,19 @@ export default function SelectScreen() {
               </View>
             );
           })}
+          <Button
+            mode="contained"
+            className="mt-4"
+            onPress={handleCommitGame}
+            loading={isCommitting}
+            disabled={isCommitting}>
+            Commit
+          </Button>
+          {commitError ? (
+            <Text variant="bodySmall" className="mt-2 text-red-700">
+              {commitError}
+            </Text>
+          ) : null}
         </ScrollView>
       )}
     </Screen>
