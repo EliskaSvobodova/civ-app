@@ -32,11 +32,41 @@ function UniqueAssetColumn({
   );
 }
 
+function ActionButton({
+  label,
+  onPress,
+  variant = 'primary',
+}: {
+  label: string;
+  onPress: () => void;
+  variant?: 'primary' | 'outlined';
+}) {
+  const isPrimary = variant === 'primary';
+
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      className={`flex-1 rounded-md py-3 active:opacity-90 ${
+        isPrimary ? 'bg-primary' : 'border border-primary bg-surface'
+      }`}>
+      <Text
+        variant="labelLarge"
+        className="text-center font-semibold uppercase tracking-wide"
+        style={{ color: isPrimary ? imperialColors.onPrimary : imperialColors.primary }}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
 export function CivilizationExpandedDetails({
   civilization,
+  onViewDetails,
   onViewHistory,
 }: {
   civilization: Civilization;
+  onViewDetails?: () => void;
   onViewHistory?: () => void;
 }) {
   const flavor = getCivilizationFlavor(civilization);
@@ -84,18 +114,15 @@ export function CivilizationExpandedDetails({
         </View>
       ) : null}
 
-      {onViewHistory ? (
-        <Pressable
-          onPress={onViewHistory}
-          accessibilityRole="button"
-          className="mt-1 w-full rounded-md bg-primary py-3 active:opacity-90">
-          <Text
-            variant="labelLarge"
-            className="text-center font-semibold uppercase tracking-wide"
-            style={{ color: imperialColors.onPrimary }}>
-            Select!
-          </Text>
-        </Pressable>
+      {onViewDetails || onViewHistory ? (
+        <View className="mt-1 flex-row gap-2">
+          {onViewDetails ? (
+            <ActionButton label="Details" onPress={onViewDetails} variant="outlined" />
+          ) : null}
+          {onViewHistory ? (
+            <ActionButton label="View game history" onPress={onViewHistory} variant="primary" />
+          ) : null}
+        </View>
       ) : null}
     </View>
   );

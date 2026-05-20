@@ -7,12 +7,14 @@ import { ImperialCard } from '@/components/ui/ImperialCard';
 import { imperialColors } from '@/constants/theme';
 import type { Civilization } from '@/types';
 
+import { CivilizationDetailsModal } from './CivilizationDetailsModal';
 import { CivilizationEmblem } from './CivilizationEmblem';
 import { CivilizationExpandedDetails } from './CivilizationExpandedDetails';
 import { CivilizationLeaderHeader } from './CivilizationLeaderHeader';
 
 export function CivilizationListItem({ civilization }: { civilization: Civilization }) {
   const [expanded, setExpanded] = useState(false);
+  const [detailsVisible, setDetailsVisible] = useState(false);
 
   return (
     <ImperialCard className="mb-3" selected={expanded}>
@@ -36,6 +38,7 @@ export function CivilizationListItem({ civilization }: { civilization: Civilizat
         <View className="border-t border-outline px-4 pb-6 pt-4">
           <CivilizationExpandedDetails
             civilization={civilization}
+            onViewDetails={() => setDetailsVisible(true)}
             onViewHistory={() =>
               router.push({
                 pathname: '/history',
@@ -45,6 +48,12 @@ export function CivilizationListItem({ civilization }: { civilization: Civilizat
           />
         </View>
       ) : null}
+
+      <CivilizationDetailsModal
+        civilization={civilization}
+        visible={detailsVisible}
+        onDismiss={() => setDetailsVisible(false)}
+      />
     </ImperialCard>
   );
 }
