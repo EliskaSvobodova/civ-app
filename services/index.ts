@@ -7,3 +7,4 @@ export {
   getLeaderKey,
   pickRandomCivilization,
 } from './civilizationService';
+export { createPlayer, getAllPlayers, type Player } from './playerService';

@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FlatList, Pressable, View } from 'react-native';
-import { Button, Divider, Searchbar, Text } from 'react-native-paper';
+import { Button, Dialog, Divider, Portal, Searchbar, Text, TextInput } from 'react-native-paper';
 import { router } from 'expo-router';
 
 import { CivilizationEmblem } from '@/components/civilization/CivilizationEmblem';
@@ -9,7 +9,13 @@ import { CivilizationLeaderHeader } from '@/components/civilization/Civilization
 import { Heading } from '@/components/ui/Heading';
 import { ImperialCard } from '@/components/ui/ImperialCard';
 import { Screen } from '@/components/ui/Screen';
-import { getAllCivilizations, pickRandomCivilization } from '@/services';
+import {
+  createPlayer,
+  getAllCivilizations,
+  getAllPlayers,
+  pickRandomCivilization,
+  type Player,
+} from '@/services';
 import type { Civilization } from '@/types';
 
 function CivilizationDetails({ civilization }: { civilization: Civilization }) {
@@ -39,8 +45,48 @@ export default function SelectScreen() {
     () => [...getAllCivilizations()].sort((a, b) => a.name.localeCompare(b.name)),
     [],
   );
+  const [players, setPlayers] = useState<Player[]>([]);
+  const [createModalVisible, setCreateModalVisible] = useState(false);
+  const [newPlayerName, setNewPlayerName] = useState('');
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
   const [query, setQuery] = useState('');
   const [selection, setSelection] = useState<Civilization | null>(null);
+
+  const loadPlayers = useCallback(async () => {
+    const list = await getAllPlayers();
+    setPlayers(list);
+  }, []);
+
+  useEffect(() => {
+    loadPlayers().catch(() => setPlayers([]));
+  }, [loadPlayers]);
+
+  const openCreateModal = () => {
+    setNewPlayerName('');
+    setCreateError(null);
+    setCreateModalVisible(true);
+  };
+
+  const closeCreateModal = () => {
+    setCreateModalVisible(false);
+    setNewPlayerName('');
+    setCreateError(null);
+  };
+
+  const handleCreatePlayer = async () => {
+    setCreateError(null);
+    setIsCreating(true);
+    try {
+      await createPlayer(newPlayerName);
+      await loadPlayers();
+      closeCreateModal();
+    } catch (error) {
+      setCreateError(error instanceof Error ? error.message : 'Failed to create player');
+    } finally {
+      setIsCreating(false);
+    }
+  };
 
   const filtered = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -64,7 +110,60 @@ export default function SelectScreen() {
 
   return (
     <Screen className="flex-1 px-margin-mobile pt-4">
-      <Heading level="md">Civilization selection</Heading>
+      <Heading level="md">Players</Heading>
+      {players.length > 0 ? (
+        <View className="mt-2 gap-1">
+          {players.map((player) => (
+            <Text key={player.id} variant="bodyLarge" className="text-primary">
+              {player.name}
+            </Text>
+          ))}
+        </View>
+      ) : (
+        <Text variant="bodyMedium" className="mt-1 text-on-surface-variant">
+          No players yet. Create one to get started.
+        </Text>
+      )}
+      <Button mode="outlined" className="mt-3" onPress={openCreateModal}>
+        Create player
+      </Button>
+
+      <Portal>
+        <Dialog visible={createModalVisible} onDismiss={closeCreateModal}>
+          <Dialog.Title>Create player</Dialog.Title>
+          <Dialog.Content>
+            <TextInput
+              label="Username"
+              value={newPlayerName}
+              onChangeText={setNewPlayerName}
+              mode="outlined"
+              autoFocus
+              disabled={isCreating}
+            />
+            {createError ? (
+              <Text variant="bodySmall" className="mt-2 text-red-700">
+                {createError}
+              </Text>
+            ) : null}
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={closeCreateModal} disabled={isCreating}>
+              Cancel
+            </Button>
+            <Button
+              mode="contained"
+              onPress={handleCreatePlayer}
+              loading={isCreating}
+              disabled={isCreating || !newPlayerName.trim()}>
+              Create
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
+
+      <Heading level="md" className="mt-6">
+        Civilization selection
+      </Heading>
       <Text variant="bodyMedium" className="mt-1 text-on-surface-variant">
         {civilizations.length} Vox Populi civilizations
       </Text>
