@@ -1,20 +1,16 @@
-import { router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { FlatList, Pressable, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import {
   Button,
   Checkbox,
   Dialog,
   Divider,
   Portal,
-  Searchbar,
   Text,
-  TextInput,
+  TextInput
 } from 'react-native-paper';
 
 import { CivilizationEmblem } from '@/components/civilization/CivilizationEmblem';
-import { CivilizationExpandedDetails } from '@/components/civilization/CivilizationExpandedDetails';
-import { CivilizationLeaderHeader } from '@/components/civilization/CivilizationLeaderHeader';
 import { Heading } from '@/components/ui/Heading';
 import { ImperialCard } from '@/components/ui/ImperialCard';
 import { Screen } from '@/components/ui/Screen';
@@ -22,46 +18,56 @@ import {
   createPlayer,
   getAllCivilizations,
   getAllPlayers,
-  pickRandomCivilization,
   type Player,
 } from '@/services';
 import type { Civilization } from '@/types';
 
-function CivilizationDetails({ civilization }: { civilization: Civilization }) {
-  return (
-    <View className="p-6">
-      <View className="flex-row items-start gap-2">
-        <CivilizationLeaderHeader civilization={civilization} />
-        <CivilizationEmblem name={civilization.name} />
-      </View>
-      <View className="mt-4">
-        <CivilizationExpandedDetails
-          civilization={civilization}
-          onViewHistory={() =>
-            router.push({
-              pathname: '/history',
-              params: { civ: civilization.slug },
-            })
-          }
-        />
-      </View>
-    </View>
-  );
+function pickRandomCivilizationExcluding(
+  civilizations: Civilization[],
+  usedSlugs: Set<string>,
+): Civilization {
+  const available = civilizations.filter((civ) => !usedSlugs.has(civ.slug));
+  const pool = available.length > 0 ? available : civilizations;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function assignCivilizationsForPlayers(
+  playerIds: number[],
+  previous: Record<number, Civilization>,
+  civilizations: Civilization[],
+): Record<number, Civilization> {
+  const next: Record<number, Civilization> = {};
+  const usedSlugs = new Set<string>();
+
+  for (const id of playerIds) {
+    const existing = previous[id];
+    if (existing) {
+      next[id] = existing;
+      usedSlugs.add(existing.slug);
+    }
+  }
+
+  for (const id of playerIds) {
+    if (next[id]) continue;
+    const pick = pickRandomCivilizationExcluding(civilizations, usedSlugs);
+    next[id] = pick;
+    usedSlugs.add(pick.slug);
+  }
+
+  return next;
 }
 
 export default function SelectScreen() {
-  const civilizations = useMemo(
-    () => [...getAllCivilizations()].sort((a, b) => a.name.localeCompare(b.name)),
-    [],
-  );
   const [players, setPlayers] = useState<Player[]>([]);
   const [createModalVisible, setCreateModalVisible] = useState(false);
   const [newPlayerName, setNewPlayerName] = useState('');
   const [createError, setCreateError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [gamePlayerIds, setGamePlayerIds] = useState<number[]>([]);
-  const [query, setQuery] = useState('');
-  const [selection, setSelection] = useState<Civilization | null>(null);
+  const [civilizationAssignments, setCivilizationAssignments] = useState<
+    Record<number, Civilization>
+  >({});
+  const civilizations = useMemo(() => getAllCivilizations(), []);
 
   const gamePlayers = useMemo(
     () => players.filter((player) => gamePlayerIds.includes(player.id)),
@@ -99,7 +105,19 @@ export default function SelectScreen() {
 
   const clearGame = () => {
     setGamePlayerIds([]);
+    setCivilizationAssignments({});
   };
+
+  useEffect(() => {
+    if (gamePlayerIds.length === 0) {
+      setCivilizationAssignments({});
+      return;
+    }
+
+    setCivilizationAssignments((previous) =>
+      assignCivilizationsForPlayers(gamePlayerIds, previous, civilizations),
+    );
+  }, [gamePlayerIds, civilizations]);
 
   const handleCreatePlayer = async () => {
     setCreateError(null);
@@ -113,26 +131,6 @@ export default function SelectScreen() {
     } finally {
       setIsCreating(false);
     }
-  };
-
-  const filtered = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
-    if (!normalizedQuery) {
-      return civilizations;
-    }
-
-    return civilizations.filter(
-      (civ) =>
-        civ.name.toLowerCase().includes(normalizedQuery) ||
-        civ.slug.includes(normalizedQuery) ||
-        civ.leader.name.toLowerCase().includes(normalizedQuery),
-    );
-  }, [civilizations, query]);
-
-  const handleRandomPick = () => {
-    const pick = pickRandomCivilization();
-    setSelection(pick);
-    setQuery('');
   };
 
   return (
@@ -214,61 +212,45 @@ export default function SelectScreen() {
       </Portal>
 
       <Heading level="md" className="mt-6">
-        Civilization selection
+        Civilization assignment
       </Heading>
-      <Text variant="bodyMedium" className="mt-1 text-on-surface-variant">
-        {civilizations.length} Vox Populi civilizations
-      </Text>
 
-      <View className="mt-4">
-        <Searchbar
-          placeholder="Search by civ or leader"
-          value={query}
-          onChangeText={setQuery}
-          style={{ backgroundColor: '#f5efe9' }}
-        />
-      </View>
+      {gamePlayers.length === 0 ? (
+        <Text variant="bodyMedium" className="mt-2 text-on-surface-variant">
+          Add players to the game to assign a random civilization to each.
+        </Text>
+      ) : (
+        <ScrollView className="mt-3 flex-1" keyboardShouldPersistTaps="handled">
+          {gamePlayers.map((player, index) => {
+            const civilization = civilizationAssignments[player.id];
+            if (!civilization) return null;
 
-      <Button mode="contained" className="mt-3" onPress={handleRandomPick}>
-        Random civilization
-      </Button>
-
-      {selection ? (
-        <ImperialCard className="mt-4 overflow-hidden" selected>
-          <CivilizationDetails civilization={selection} />
-        </ImperialCard>
-      ) : null}
-
-      <FlatList
-        className="mt-4 flex-1"
-        data={filtered}
-        keyExtractor={(item) => item.slug}
-        keyboardShouldPersistTaps="handled"
-        ItemSeparatorComponent={() => <Divider className="bg-outline" />}
-        renderItem={({ item }) => {
-          const isSelected = selection?.slug === item.slug;
-
-          return (
-            <Pressable
-              onPress={() => setSelection(item)}
-              className={`rounded-md border border-transparent py-3 ${
-                isSelected ? 'border-l-4 border-l-secondary bg-secondary/10 pl-2' : ''
-              }`}>
-              <Text variant="titleMedium" className="text-primary">
-                {item.name}
-              </Text>
-              <Text variant="bodySmall" className="uppercase tracking-wide text-on-surface-variant">
-                {item.leader.name}
-              </Text>
-            </Pressable>
-          );
-        }}
-        ListEmptyComponent={
-          <Text variant="bodyMedium" className="py-6 text-center text-on-surface-variant">
-            No civilizations match your search.
-          </Text>
-        }
-      />
+            return (
+              <View key={player.id}>
+                {index > 0 ? <Divider className="my-2 bg-outline" /> : null}
+                <ImperialCard className="overflow-hidden">
+                  <View className="flex-row items-center gap-3 p-4">
+                    <View className="min-w-0 flex-1">
+                      <Text variant="titleMedium" className="font-serif text-primary">
+                        {player.name}
+                      </Text>
+                      <Text variant="bodyMedium" className="mt-1 text-primary">
+                        {civilization.name}
+                      </Text>
+                      <Text
+                        variant="bodySmall"
+                        className="uppercase tracking-wide text-on-surface-variant">
+                        {civilization.leader.name}
+                      </Text>
+                    </View>
+                    <CivilizationEmblem name={civilization.name} />
+                  </View>
+                </ImperialCard>
+              </View>
+            );
+          })}
+        </ScrollView>
+      )}
     </Screen>
   );
 }
