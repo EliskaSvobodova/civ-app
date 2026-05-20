@@ -10,6 +10,8 @@ export {
 export {
   createGame,
   getGameHistory,
+  updateGameMatch,
+  updateGameStartedAt,
   updateGameWinner,
   type CreateGameAssignment,
   type Game,
@@ -17,6 +19,7 @@ export {
   type GameHistoryParticipant,
   type GamePlayerRow,
   type GameWinner,
+  type UpdateGameMatchInput,
   type UpdateGameWinnerInput,
 } from './gameService';
 export { createPlayer, getAllPlayers, type Player } from './playerService';

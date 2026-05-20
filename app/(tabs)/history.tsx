@@ -9,9 +9,9 @@ import { ImperialCard } from '@/components/ui/ImperialCard';
 import { Screen } from '@/components/ui/Screen';
 import {
   getGameHistory,
-  updateGameWinner,
+  updateGameMatch,
   type GameHistoryEntry,
-  type UpdateGameWinnerInput,
+  type UpdateGameMatchInput,
 } from '@/services';
 
 function formatStartedAt(iso: string): string {
@@ -52,8 +52,8 @@ export default function HistoryScreen() {
     );
   }, [civ, entries]);
 
-  const handleSaveWinner = async (gameId: number, winner: UpdateGameWinnerInput) => {
-    await updateGameWinner(gameId, winner);
+  const handleSaveMatch = async (gameId: number, input: UpdateGameMatchInput) => {
+    await updateGameMatch(gameId, input);
     await loadHistory();
   };
 
@@ -94,7 +94,7 @@ export default function HistoryScreen() {
                       icon="pencil"
                       size={20}
                       onPress={() => setEditingEntry(entry)}
-                      accessibilityLabel="Edit match winner"
+                      accessibilityLabel="Edit match"
                     />
                   </View>
                   {entry.winnerLabel ? (
@@ -138,7 +138,7 @@ export default function HistoryScreen() {
         entry={editingEntry}
         visible={editingEntry != null}
         onDismiss={() => setEditingEntry(null)}
-        onSave={handleSaveWinner}
+        onSave={handleSaveMatch}
       />
     </Screen>
   );
