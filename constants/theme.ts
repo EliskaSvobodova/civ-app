@@ -7,6 +7,7 @@ export const imperialColors = {
   surfaceDim: '#f5efe9',
   muted: 'rgba(0, 43, 91, 0.65)',
   onSurfaceVariant: 'rgba(0, 43, 91, 0.65)',
+  onPrimary: '#ffffff',
 } as const;
 
 export const imperialFonts = {

@@ -1,6 +1,7 @@
 import { Pressable, View } from 'react-native';
 import { Divider, Text } from 'react-native-paper';
 
+import { imperialColors } from '@/constants/theme';
 import type { Civilization } from '@/types';
 import { getCivilizationFlavor } from '@/utils/civilization';
 
@@ -90,8 +91,9 @@ export function CivilizationExpandedDetails({
           className="mt-1 w-full rounded-md bg-primary py-3 active:opacity-90">
           <Text
             variant="labelLarge"
-            className="text-center font-semibold uppercase tracking-wide text-white">
-            View more history
+            className="text-center font-semibold uppercase tracking-wide"
+            style={{ color: imperialColors.onPrimary }}>
+            Select!
           </Text>
         </Pressable>
       ) : null}
