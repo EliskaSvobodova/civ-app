@@ -24,6 +24,42 @@ export function isoToLocalTimeInput(iso: string): string {
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_PATTERN = /^\d{2}:\d{2}$/;
 
+export function parseLocalDateToIso(date: string, preserveTimeFromIso?: string): string {
+  const trimmedDate = date.trim();
+
+  if (!DATE_PATTERN.test(trimmedDate)) {
+    throw new Error('Enter a valid date (YYYY-MM-DD).');
+  }
+
+  const [year, month, day] = trimmedDate.split('-').map(Number);
+
+  let hours = 12;
+  let minutes = 0;
+  if (preserveTimeFromIso) {
+    const existing = new Date(preserveTimeFromIso);
+    if (!Number.isNaN(existing.getTime())) {
+      hours = existing.getHours();
+      minutes = existing.getMinutes();
+    }
+  }
+
+  if (month < 1 || month > 12 || day < 1 || day > 31) {
+    throw new Error('Date is out of range.');
+  }
+
+  const parsed = new Date(year, month - 1, day, hours, minutes);
+  if (
+    Number.isNaN(parsed.getTime()) ||
+    parsed.getFullYear() !== year ||
+    parsed.getMonth() !== month - 1 ||
+    parsed.getDate() !== day
+  ) {
+    throw new Error('Enter a valid date.');
+  }
+
+  return parsed.toISOString();
+}
+
 export function parseLocalDateTimeToIso(date: string, time: string): string {
   const trimmedDate = date.trim();
   const trimmedTime = time.trim();

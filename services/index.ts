@@ -9,6 +9,7 @@ export {
 } from './civilizationService';
 export {
   createGame,
+  deleteGame,
   getGameHistory,
   updateGameMatch,
   updateGameStartedAt,

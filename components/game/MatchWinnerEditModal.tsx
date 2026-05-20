@@ -18,11 +18,7 @@ import {
   type GameWinner,
   type UpdateGameMatchInput,
 } from '@/services';
-import {
-  isoToLocalDateInput,
-  isoToLocalTimeInput,
-  parseLocalDateTimeToIso,
-} from '@/utils/gameDateTime';
+import { isoToLocalDateInput, parseLocalDateToIso } from '@/utils/gameDateTime';
 
 type WinnerMode = 'human' | 'ai';
 
@@ -62,7 +58,6 @@ export function MatchWinnerEditModal({
   onSave,
 }: MatchWinnerEditModalProps) {
   const [startDate, setStartDate] = useState('');
-  const [startTime, setStartTime] = useState('');
   const [mode, setMode] = useState<WinnerMode>('human');
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<number[]>([]);
   const [selectedAiCivKey, setSelectedAiCivKey] = useState<string | null>(null);
@@ -84,7 +79,6 @@ export function MatchWinnerEditModal({
     }
     const winner = entry.winner;
     setStartDate(isoToLocalDateInput(entry.startedAt));
-    setStartTime(isoToLocalTimeInput(entry.startedAt));
     setMode(winnerToMode(winner));
     setSelectedPlayerIds(winnerToSelectedPlayerIds(entry, winner));
     setSelectedAiCivKey(winnerToAiCivilizationKey(winner));
@@ -117,16 +111,16 @@ export function MatchWinnerEditModal({
       return;
     }
 
-    if (!startDate.trim() || !startTime.trim()) {
-      setSaveError('Enter both date and time for when the game started.');
+    if (!startDate.trim()) {
+      setSaveError('Enter the date when the game started.');
       return;
     }
 
     let startedAt: string;
     try {
-      startedAt = parseLocalDateTimeToIso(startDate, startTime);
+      startedAt = parseLocalDateToIso(startDate, entry.startedAt);
     } catch (error) {
-      setSaveError(error instanceof Error ? error.message : 'Invalid start date or time');
+      setSaveError(error instanceof Error ? error.message : 'Invalid start date');
       return;
     }
 
@@ -173,14 +167,6 @@ export function MatchWinnerEditModal({
                   onChangeText={setStartDate}
                   mode="outlined"
                   placeholder="YYYY-MM-DD"
-                  disabled={isSaving}
-                />
-                <TextInput
-                  label="Time"
-                  value={startTime}
-                  onChangeText={setStartTime}
-                  mode="outlined"
-                  placeholder="HH:MM"
                   disabled={isSaving}
                 />
               </View>
@@ -263,7 +249,6 @@ export function MatchWinnerEditModal({
             disabled={
               isSaving ||
               !startDate.trim() ||
-              !startTime.trim() ||
               (mode === 'human' ? selectedPlayerIds.length === 0 : !selectedAiCivKey)
             }>
             Save
