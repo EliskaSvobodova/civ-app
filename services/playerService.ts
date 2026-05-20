@@ -1,4 +1,4 @@
-import { asc } from 'drizzle-orm';
+import { asc, sql } from 'drizzle-orm';
 import type { InferSelectModel } from 'drizzle-orm';
 import { Platform } from 'react-native';
 
@@ -25,6 +25,33 @@ function useAsyncSqlite(): boolean {
   return Platform.OS === 'web';
 }
 
+const DUPLICATE_NAME_ERROR = 'A player with this name already exists';
+
+function isUniqueConstraintError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.includes('UNIQUE constraint failed');
+}
+
+async function findPlayerByName(name: string): Promise<Player | null> {
+  if (useAsyncSqlite()) {
+    const sqlite = getDatabase().$client;
+    const row = await sqlite.getFirstAsync<PlayerRow>(
+      'SELECT id, name, created_at FROM players WHERE lower(name) = lower(?) LIMIT 1',
+      name,
+    );
+    return row ? mapPlayerRow(row) : null;
+  }
+
+  const db = getDatabase();
+  const [player] = await db
+    .select()
+    .from(players)
+    .where(sql`lower(${players.name}) = lower(${name})`)
+    .limit(1);
+
+  return player ?? null;
+}
+
 export async function getAllPlayers(): Promise<Player[]> {
   if (useAsyncSqlite()) {
     const sqlite = getDatabase().$client;
@@ -44,14 +71,27 @@ export async function createPlayer(name: string): Promise<Player> {
     throw new Error('Player name is required');
   }
 
+  const existing = await findPlayerByName(trimmed);
+  if (existing) {
+    throw new Error(DUPLICATE_NAME_ERROR);
+  }
+
   if (useAsyncSqlite()) {
     const sqlite = getDatabase().$client;
     const createdAt = new Date().toISOString();
-    const result = await sqlite.runAsync(
-      'INSERT INTO players (name, created_at) VALUES (?, ?)',
-      trimmed,
-      createdAt,
-    );
+    let result: { lastInsertRowId: number };
+    try {
+      result = await sqlite.runAsync(
+        'INSERT INTO players (name, created_at) VALUES (?, ?)',
+        trimmed,
+        createdAt,
+      );
+    } catch (error) {
+      if (isUniqueConstraintError(error)) {
+        throw new Error(DUPLICATE_NAME_ERROR);
+      }
+      throw error;
+    }
     const row = await sqlite.getFirstAsync<PlayerRow>(
       'SELECT id, name, created_at FROM players WHERE id = ?',
       result.lastInsertRowId,
@@ -63,17 +103,24 @@ export async function createPlayer(name: string): Promise<Player> {
   }
 
   const db = getDatabase();
-  const [player] = await db
-    .insert(players)
-    .values({
-      name: trimmed,
-      createdAt: new Date().toISOString(),
-    })
-    .returning();
+  try {
+    const [player] = await db
+      .insert(players)
+      .values({
+        name: trimmed,
+        createdAt: new Date().toISOString(),
+      })
+      .returning();
 
-  if (!player) {
-    throw new Error('Failed to create player');
+    if (!player) {
+      throw new Error('Failed to create player');
+    }
+
+    return player;
+  } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      throw new Error(DUPLICATE_NAME_ERROR);
+    }
+    throw error;
   }
-
-  return player;
 }

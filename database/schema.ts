@@ -21,7 +21,7 @@ export const games = sqliteTable('games', {
 
 export const players = sqliteTable('players', {
   id: integer('id').primaryKey({ autoIncrement: true }),
-  name: text('name').notNull(),
+  name: text('name').notNull().unique(),
   createdAt: text('created_at').notNull(),
 });
 
