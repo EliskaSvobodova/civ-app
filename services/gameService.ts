@@ -1,4 +1,4 @@
-import { desc, eq } from 'drizzle-orm';
+import { desc, eq, inArray, isNotNull } from 'drizzle-orm';
 import type { InferSelectModel } from 'drizzle-orm';
 import { Platform } from 'react-native';
 
@@ -44,6 +44,11 @@ export type GameHistoryEntry = {
   participants: GameHistoryParticipant[];
   winner: GameWinner | null;
   winnerLabel: string | null;
+};
+
+export type CivilizationWinCount = {
+  civilizationKey: string;
+  wins: number;
 };
 
 type GameHistoryRow = {
@@ -521,4 +526,132 @@ export async function createGame(
     .returning();
 
   return { game, gamePlayers: insertedPlayers };
+}
+
+type GameWinnerRow = {
+  id: number;
+  winner_kind: string;
+  winner_player_ids: string | null;
+  winner_civilization_key: string | null;
+};
+
+type GamePlayerCivRow = {
+  game_id: number;
+  player_id: number;
+  civilization_key: string;
+};
+
+function aggregateCivilizationWins(
+  gameRows: GameWinnerRow[],
+  playerRows: GamePlayerCivRow[],
+): CivilizationWinCount[] {
+  const playersByGame = new Map<number, GamePlayerCivRow[]>();
+  for (const row of playerRows) {
+    const list = playersByGame.get(row.game_id) ?? [];
+    list.push(row);
+    playersByGame.set(row.game_id, list);
+  }
+
+  const winCounts = new Map<string, number>();
+
+  const increment = (civilizationKey: string) => {
+    winCounts.set(civilizationKey, (winCounts.get(civilizationKey) ?? 0) + 1);
+  };
+
+  for (const game of gameRows) {
+    if (game.winner_kind === 'ai' && game.winner_civilization_key) {
+      increment(game.winner_civilization_key);
+      continue;
+    }
+
+    if (game.winner_kind !== 'human') {
+      continue;
+    }
+
+    const winnerPlayerIds = parseWinnerPlayerIds(game.winner_player_ids);
+    if (winnerPlayerIds.length === 0) {
+      continue;
+    }
+
+    const participants = playersByGame.get(game.id) ?? [];
+    const winnerIdSet = new Set(winnerPlayerIds);
+    for (const participant of participants) {
+      if (winnerIdSet.has(participant.player_id)) {
+        increment(participant.civilization_key);
+      }
+    }
+  }
+
+  return Array.from(winCounts.entries())
+    .map(([civilizationKey, wins]) => ({ civilizationKey, wins }))
+    .sort((a, b) => b.wins - a.wins || a.civilizationKey.localeCompare(b.civilizationKey));
+}
+
+export async function getTopCivilizationsByWins(
+  limit = 3,
+): Promise<CivilizationWinCount[]> {
+  if (limit <= 0) {
+    return [];
+  }
+
+  if (useAsyncSqlite()) {
+    const sqlite = getDatabase().$client;
+    const gameRows = await sqlite.getAllAsync<GameWinnerRow>(
+      `SELECT id, winner_kind, winner_player_ids, winner_civilization_key
+       FROM games
+       WHERE winner_kind IS NOT NULL`,
+    );
+    if (gameRows.length === 0) {
+      return [];
+    }
+
+    const placeholders = gameRows.map(() => '?').join(', ');
+    const playerRows = await sqlite.getAllAsync<GamePlayerCivRow>(
+      `SELECT game_id, player_id, civilization_key
+       FROM game_players
+       WHERE game_id IN (${placeholders})`,
+      ...gameRows.map((row) => row.id),
+    );
+
+    return aggregateCivilizationWins(gameRows, playerRows).slice(0, limit);
+  }
+
+  const db = getDatabase();
+  const gameRows = await db
+    .select({
+      id: games.id,
+      winnerKind: games.winnerKind,
+      winnerPlayerIds: games.winnerPlayerIds,
+      winnerCivilizationKey: games.winnerCivilizationKey,
+    })
+    .from(games)
+    .where(isNotNull(games.winnerKind));
+
+  if (gameRows.length === 0) {
+    return [];
+  }
+
+  const gameIds = gameRows.map((row) => row.id);
+  const playerRows = await db
+    .select({
+      gameId: gamePlayers.gameId,
+      playerId: gamePlayers.playerId,
+      civilizationKey: gamePlayers.civilizationKey,
+    })
+    .from(gamePlayers)
+    .where(inArray(gamePlayers.gameId, gameIds));
+
+  return aggregateCivilizationWins(
+    gameRows.map((row) => ({
+      id: row.id,
+      winner_kind: row.winnerKind!,
+      winner_player_ids: row.winnerPlayerIds,
+      winner_civilization_key: row.winnerCivilizationKey,
+    })),
+    playerRows.map((row) => ({
+      game_id: row.gameId,
+      player_id: row.playerId,
+      civilization_key: row.civilizationKey,
+    })),
+  ).slice(0, limit);
 }
