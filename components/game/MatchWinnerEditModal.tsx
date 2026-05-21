@@ -18,7 +18,11 @@ import {
   type GameWinner,
   type UpdateGameMatchInput,
 } from '@/services';
-import { isoToLocalDateInput, parseLocalDateToIso } from '@/utils/gameDateTime';
+import {
+  isoToLocalDateInput,
+  parseLocalDateToIso,
+  todayLocalDateInput,
+} from '@/utils/gameDateTime';
 
 type WinnerMode = 'human' | 'ai';
 
@@ -58,6 +62,7 @@ export function MatchWinnerEditModal({
   onSave,
 }: MatchWinnerEditModalProps) {
   const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [mode, setMode] = useState<WinnerMode>('human');
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<number[]>([]);
   const [selectedAiCivKey, setSelectedAiCivKey] = useState<string | null>(null);
@@ -79,6 +84,9 @@ export function MatchWinnerEditModal({
     }
     const winner = entry.winner;
     setStartDate(isoToLocalDateInput(entry.startedAt));
+    setEndDate(
+      entry.endedAt ? isoToLocalDateInput(entry.endedAt) : todayLocalDateInput(),
+    );
     setMode(winnerToMode(winner));
     setSelectedPlayerIds(winnerToSelectedPlayerIds(entry, winner));
     setSelectedAiCivKey(winnerToAiCivilizationKey(winner));
@@ -116,11 +124,24 @@ export function MatchWinnerEditModal({
       return;
     }
 
+    if (!endDate.trim()) {
+      setSaveError('Enter the date when the game ended.');
+      return;
+    }
+
     let startedAt: string;
     try {
       startedAt = parseLocalDateToIso(startDate, entry.startedAt);
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : 'Invalid start date');
+      return;
+    }
+
+    let endedAt: string;
+    try {
+      endedAt = parseLocalDateToIso(endDate, entry.endedAt ?? undefined);
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'Invalid end date');
       return;
     }
 
@@ -137,7 +158,7 @@ export function MatchWinnerEditModal({
     setIsSaving(true);
     setSaveError(null);
     try {
-      await onSave(entry.id, { startedAt, winner });
+      await onSave(entry.id, { startedAt, endedAt, winner });
       onDismiss();
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : 'Failed to save match');
@@ -165,6 +186,19 @@ export function MatchWinnerEditModal({
                   label="Date"
                   value={startDate}
                   onChangeText={setStartDate}
+                  mode="outlined"
+                  placeholder="YYYY-MM-DD"
+                  disabled={isSaving}
+                />
+              </View>
+              <View className="gap-2">
+                <Text variant="labelMedium" className="uppercase tracking-wide text-primary">
+                  Game end
+                </Text>
+                <TextInput
+                  label="Date"
+                  value={endDate}
+                  onChangeText={setEndDate}
                   mode="outlined"
                   placeholder="YYYY-MM-DD"
                   disabled={isSaving}
@@ -249,6 +283,7 @@ export function MatchWinnerEditModal({
             disabled={
               isSaving ||
               !startDate.trim() ||
+              !endDate.trim() ||
               (mode === 'human' ? selectedPlayerIds.length === 0 : !selectedAiCivKey)
             }>
             Save

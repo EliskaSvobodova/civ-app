@@ -1,3 +1,8 @@
+/** Today's local calendar date for date inputs: YYYY-MM-DD */
+export function todayLocalDateInput(): string {
+  return isoToLocalDateInput(new Date().toISOString());
+}
+
 /** Local calendar date for HTML-style date inputs: YYYY-MM-DD */
 export function isoToLocalDateInput(iso: string): string {
   const date = new Date(iso);

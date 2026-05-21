@@ -1,0 +1,1 @@
+ALTER TABLE `games` ADD `ended_at` text;

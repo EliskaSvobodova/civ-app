@@ -35,12 +35,14 @@ export type UpdateGameWinnerInput = GameWinner;
 
 export type UpdateGameMatchInput = {
   startedAt: string;
+  endedAt: string;
   winner: UpdateGameWinnerInput;
 };
 
 export type GameHistoryEntry = {
   id: number;
   startedAt: string;
+  endedAt: string | null;
   participants: GameHistoryParticipant[];
   winner: GameWinner | null;
   winnerLabel: string | null;
@@ -63,6 +65,7 @@ const AI_LEADERBOARD_KEY = 'ai';
 type GameHistoryRow = {
   game_id: number;
   played_at: string;
+  ended_at: string | null;
   player_id: number;
   player_name: string;
   civilization_key: string;
@@ -89,6 +92,7 @@ type GameRow = {
   winner_leader_key: string | null;
   notes: string | null;
   played_at: string;
+  ended_at: string | null;
   created_at: string;
 };
 
@@ -117,6 +121,7 @@ function mapGameRow(row: GameRow): Game {
     winnerLeaderKey: row.winner_leader_key,
     notes: row.notes,
     playedAt: row.played_at,
+    endedAt: row.ended_at,
     createdAt: row.created_at,
   };
 }
@@ -226,6 +231,7 @@ function groupGameHistoryRows(rows: GameHistoryRow[]): GameHistoryEntry[] {
       entry = {
         id: row.game_id,
         startedAt: row.played_at,
+        endedAt: row.ended_at,
         participants: [],
         winner,
         winnerLabel: null,
@@ -253,7 +259,7 @@ export async function getGameHistory(): Promise<GameHistoryEntry[]> {
   if (useAsyncSqlite()) {
     const sqlite = getDatabase().$client;
     const rows = await sqlite.getAllAsync<GameHistoryRow>(
-      `SELECT g.id AS game_id, g.played_at, p.id AS player_id, p.name AS player_name,
+      `SELECT g.id AS game_id, g.played_at, g.ended_at, p.id AS player_id, p.name AS player_name,
               gp.civilization_key, gp.leader_key,
               g.winner_kind, g.winner_player_ids, g.winner_civilization_key, g.winner_leader_key
        FROM games g
@@ -269,6 +275,7 @@ export async function getGameHistory(): Promise<GameHistoryEntry[]> {
     .select({
       gameId: games.id,
       playedAt: games.playedAt,
+      endedAt: games.endedAt,
       playerId: players.id,
       playerName: players.name,
       civilizationKey: gamePlayers.civilizationKey,
@@ -287,6 +294,7 @@ export async function getGameHistory(): Promise<GameHistoryEntry[]> {
     rows.map((row) => ({
       game_id: row.gameId,
       played_at: row.playedAt,
+      ended_at: row.endedAt,
       player_id: row.playerId,
       player_name: row.playerName,
       civilization_key: row.civilizationKey,
@@ -411,10 +419,11 @@ export async function updateGameMatch(
     const sqlite = getDatabase().$client;
     const result = await sqlite.runAsync(
       `UPDATE games
-       SET played_at = ?, winner_kind = ?, winner_player_ids = ?,
+       SET played_at = ?, ended_at = ?, winner_kind = ?, winner_player_ids = ?,
            winner_civilization_key = ?, winner_leader_key = ?
        WHERE id = ?`,
       input.startedAt,
+      input.endedAt,
       winnerKind,
       winnerPlayerIds,
       winnerCivilizationKey,
@@ -432,6 +441,7 @@ export async function updateGameMatch(
     .update(games)
     .set({
       playedAt: input.startedAt,
+      endedAt: input.endedAt,
       winnerKind,
       winnerPlayerIds,
       winnerCivilizationKey,
@@ -461,10 +471,11 @@ export async function createGame(
     const sqlite = getDatabase().$client;
 
     const gameResult = await sqlite.runAsync(
-      `INSERT INTO games (civilization_key, leader_key, played_at, created_at)
-       VALUES (?, ?, ?, ?)`,
+      `INSERT INTO games (civilization_key, leader_key, played_at, ended_at, created_at)
+       VALUES (?, ?, ?, ?, ?)`,
       civilizationKey,
       leaderKey,
+      now,
       now,
       now,
     );
@@ -495,7 +506,7 @@ export async function createGame(
 
     const gameRow = await sqlite.getFirstAsync<GameRow>(
       `SELECT id, civilization_key, leader_key, map_type, difficulty, victory_type,
-              score, turn_count, won, notes, played_at, created_at
+              score, turn_count, won, notes, played_at, ended_at, created_at
        FROM games WHERE id = ?`,
       gameId,
     );
@@ -514,6 +525,7 @@ export async function createGame(
       civilizationKey,
       leaderKey,
       playedAt: now,
+      endedAt: now,
       createdAt: now,
     })
     .returning();
