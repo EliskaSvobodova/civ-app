@@ -477,7 +477,7 @@ export async function createGame(
       civilizationKey,
       leaderKey,
       now,
-      now,
+      null,
       now,
     );
     const gameId = gameResult.lastInsertRowId;
@@ -526,7 +526,7 @@ export async function createGame(
       civilizationKey,
       leaderKey,
       playedAt: now,
-      endedAt: now,
+      endedAt: null,
       createdAt: now,
     })
     .returning();
