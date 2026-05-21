@@ -1,4 +1,4 @@
-import { Tabs } from 'expo-router';
+import { router, Tabs } from 'expo-router';
 
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { imperialColors, imperialFonts } from '@/constants/theme';
@@ -57,6 +57,12 @@ export default function TabLayout() {
         options={{
           title: 'History',
           tabBarIcon: ({ color }) => <TabBarIcon name="history" color={color} />,
+        }}
+        listeners={{
+          tabPress: (event) => {
+            event.preventDefault();
+            router.replace('/history');
+          },
         }}
       />
       <Tabs.Screen
