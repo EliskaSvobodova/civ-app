@@ -51,6 +51,11 @@ export type Civilization = {
   id: string;
   slug: string;
   name: string;
+  /** 0 = weakest, 10 = strongest — see assets/data/civilizations.json */
+  warlikeScore: number;
+  scienceScore: number;
+  cultureScore: number;
+  diplomaticScore: number;
   leader: Leader;
   uniqueAbility: UniqueAbility;
   uniqueUnits: UniqueUnit[];
