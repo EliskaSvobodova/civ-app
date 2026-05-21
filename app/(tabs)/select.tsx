@@ -5,6 +5,7 @@ import {
   Checkbox,
   Dialog,
   Divider,
+  IconButton,
   Portal,
   Text,
   TextInput
@@ -17,6 +18,7 @@ import { Screen } from '@/components/ui/Screen';
 import {
   createGame,
   createPlayer,
+  deletePlayer,
   getAllCivilizations,
   getAllPlayers,
   type Player,
@@ -95,6 +97,8 @@ export default function SelectScreen() {
   >({});
   const [commitError, setCommitError] = useState<string | null>(null);
   const [isCommitting, setIsCommitting] = useState(false);
+  const [playerToDelete, setPlayerToDelete] = useState<Player | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const civilizations = useMemo(() => getAllCivilizations(), []);
 
   const gamePlayers = useMemo(
@@ -175,6 +179,20 @@ export default function SelectScreen() {
     }
   };
 
+  const handleConfirmDeletePlayer = async () => {
+    if (!playerToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      await deletePlayer(playerToDelete.id);
+      setGamePlayerIds((current) => current.filter((id) => id !== playerToDelete.id));
+      setPlayerToDelete(null);
+      await loadPlayers();
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const handleCreatePlayer = async () => {
     setCreateError(null);
     setIsCreating(true);
@@ -205,13 +223,22 @@ export default function SelectScreen() {
           </Text>
           <View className="mt-2">
             {players.map((player) => (
-              <Checkbox.Item
-                key={player.id}
-                label={player.name}
-                status={gamePlayerIds.includes(player.id) ? 'checked' : 'unchecked'}
-                onPress={() => togglePlayerInGame(player.id)}
-                labelVariant="bodyLarge"
-              />
+              <View key={player.id} className="flex-row items-center">
+                <View className="min-w-0 flex-1">
+                <Checkbox.Item
+                  label={player.name}
+                  status={gamePlayerIds.includes(player.id) ? 'checked' : 'unchecked'}
+                  onPress={() => togglePlayerInGame(player.id)}
+                  labelVariant="bodyLarge"
+                />
+                </View>
+                <IconButton
+                  icon="delete"
+                  size={20}
+                  onPress={() => setPlayerToDelete(player)}
+                  accessibilityLabel={`Delete ${player.name}`}
+                />
+              </View>
             ))}
           </View>
           {gamePlayers.length > 0 ? (
@@ -262,6 +289,30 @@ export default function SelectScreen() {
               loading={isCreating}
               disabled={isCreating || !newPlayerName.trim()}>
               Create
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+        <Dialog
+          visible={playerToDelete != null}
+          onDismiss={() => !isDeleting && setPlayerToDelete(null)}>
+          <Dialog.Title>Delete player?</Dialog.Title>
+          <Dialog.Content>
+            <Text variant="bodyMedium">
+              {playerToDelete
+                ? `${playerToDelete.name} will be removed from new games. Past match history is kept.`
+                : null}
+            </Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setPlayerToDelete(null)} disabled={isDeleting}>
+              Cancel
+            </Button>
+            <Button
+              mode="contained"
+              onPress={handleConfirmDeletePlayer}
+              loading={isDeleting}
+              disabled={isDeleting}>
+              Delete
             </Button>
           </Dialog.Actions>
         </Dialog>
