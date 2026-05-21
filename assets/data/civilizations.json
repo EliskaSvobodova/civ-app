@@ -1,12 +1,16 @@
 {
   "schemaVersion": 1,
   "mod": "Vox Populi",
-  "description": "Human-readable summaries of playable civilizations, their uniques, and VP balance text. Game type IDs are included for cross-reference with Database Changes.",
+  "description": "Human-readable summaries of playable civilizations, their uniques, and VP balance text. Game type IDs are included for cross-reference with Database Changes. Each civilization includes scores from 0 (least) to 10 (most) for warlike tendency, scientific capability, cultural advancement, and diplomatic influence.",
   "civilizations": [
     {
       "id": "CIVILIZATION_AMERICA",
       "slug": "america",
       "name": "America",
+      "warlikeScore": 7,
+      "scienceScore": 7,
+      "cultureScore": 7,
+      "diplomaticScore": 4,
       "leader": {
         "id": "LEADER_WASHINGTON",
         "name": "George Washington"
@@ -104,6 +108,10 @@
       "id": "CIVILIZATION_ARABIA",
       "slug": "arabia",
       "name": "Arabia",
+      "warlikeScore": 4,
+      "scienceScore": 7,
+      "cultureScore": 7,
+      "diplomaticScore": 5,
       "leader": {
         "id": "LEADER_HARUN_AL_RASHID",
         "name": "Harun al-Rashid"
@@ -160,6 +168,10 @@
       "id": "CIVILIZATION_ASSYRIA",
       "slug": "assyria",
       "name": "Assyria",
+      "warlikeScore": 9,
+      "scienceScore": 8,
+      "cultureScore": 5,
+      "diplomaticScore": 3,
       "leader": {
         "id": "LEADER_ASHURBANIPAL",
         "name": "Ashurbanipal"
@@ -207,6 +219,10 @@
       "id": "CIVILIZATION_AUSTRIA",
       "slug": "austria",
       "name": "Austria",
+      "warlikeScore": 6,
+      "scienceScore": 4,
+      "cultureScore": 5,
+      "diplomaticScore": 9,
       "leader": {
         "id": "LEADER_MARIA_THERESA",
         "name": "Maria Theresa"
@@ -263,6 +279,10 @@
       "id": "CIVILIZATION_AZTEC",
       "slug": "aztec",
       "name": "Aztec",
+      "warlikeScore": 10,
+      "scienceScore": 3,
+      "cultureScore": 7,
+      "diplomaticScore": 2,
       "leader": {
         "id": "LEADER_MONTEZUMA",
         "name": "Montezuma"
@@ -319,6 +339,10 @@
       "id": "CIVILIZATION_BABYLON",
       "slug": "babylon",
       "name": "Babylon",
+      "warlikeScore": 5,
+      "scienceScore": 10,
+      "cultureScore": 4,
+      "diplomaticScore": 4,
       "leader": {
         "id": "LEADER_NEBUCHADNEZZAR",
         "name": "Nebuchadnezzar"
@@ -374,6 +398,10 @@
       "id": "CIVILIZATION_BRAZIL",
       "slug": "brazil",
       "name": "Brazil",
+      "warlikeScore": 5,
+      "scienceScore": 6,
+      "cultureScore": 9,
+      "diplomaticScore": 5,
       "leader": {
         "id": "LEADER_PEDRO",
         "name": "Pedro II"
@@ -431,6 +459,10 @@
       "id": "CIVILIZATION_BYZANTIUM",
       "slug": "byzantium",
       "name": "Byzantium",
+      "warlikeScore": 7,
+      "scienceScore": 5,
+      "cultureScore": 7,
+      "diplomaticScore": 7,
       "leader": {
         "id": "LEADER_THEODORA",
         "name": "Theodora"
@@ -486,6 +518,10 @@
       "id": "CIVILIZATION_CARTHAGE",
       "slug": "carthage",
       "name": "Carthage",
+      "warlikeScore": 7,
+      "scienceScore": 7,
+      "cultureScore": 6,
+      "diplomaticScore": 8,
       "leader": {
         "id": "LEADER_DIDO",
         "name": "Dido"
@@ -544,6 +580,10 @@
       "id": "CIVILIZATION_CELTS",
       "slug": "celts",
       "name": "Celts",
+      "warlikeScore": 6,
+      "scienceScore": 3,
+      "cultureScore": 7,
+      "diplomaticScore": 4,
       "leader": {
         "id": "LEADER_BOUDICCA",
         "name": "Boudicca"
@@ -598,6 +638,10 @@
       "id": "CIVILIZATION_CHINA",
       "slug": "china",
       "name": "China",
+      "warlikeScore": 4,
+      "scienceScore": 5,
+      "cultureScore": 7,
+      "diplomaticScore": 5,
       "leader": {
         "id": "LEADER_WU_ZETIAN",
         "name": "Wu Zetian"
@@ -652,6 +696,10 @@
       "id": "CIVILIZATION_DENMARK",
       "slug": "denmark",
       "name": "Denmark",
+      "warlikeScore": 9,
+      "scienceScore": 3,
+      "cultureScore": 5,
+      "diplomaticScore": 3,
       "leader": {
         "id": "LEADER_HARALD",
         "name": "Harald Bluetooth"
@@ -709,6 +757,10 @@
       "id": "CIVILIZATION_EGYPT",
       "slug": "egypt",
       "name": "Egypt",
+      "warlikeScore": 5,
+      "scienceScore": 7,
+      "cultureScore": 8,
+      "diplomaticScore": 4,
       "leader": {
         "id": "LEADER_RAMESSES",
         "name": "Ramesses II"
@@ -763,6 +815,10 @@
       "id": "CIVILIZATION_ENGLAND",
       "slug": "england",
       "name": "England",
+      "warlikeScore": 7,
+      "scienceScore": 5,
+      "cultureScore": 6,
+      "diplomaticScore": 8,
       "leader": {
         "id": "LEADER_ELIZABETH",
         "name": "Elizabeth"
@@ -820,6 +876,10 @@
       "id": "CIVILIZATION_ETHIOPIA",
       "slug": "ethiopia",
       "name": "Ethiopia",
+      "warlikeScore": 6,
+      "scienceScore": 7,
+      "cultureScore": 5,
+      "diplomaticScore": 5,
       "leader": {
         "id": "LEADER_SELASSIE",
         "name": "Haile Selassie"
@@ -874,6 +934,10 @@
       "id": "CIVILIZATION_FRANCE",
       "slug": "france",
       "name": "France",
+      "warlikeScore": 8,
+      "scienceScore": 4,
+      "cultureScore": 9,
+      "diplomaticScore": 6,
       "leader": {
         "id": "LEADER_NAPOLEON",
         "name": "Napoleon"
@@ -929,6 +993,10 @@
       "id": "CIVILIZATION_GERMANY",
       "slug": "germany",
       "name": "Germany",
+      "warlikeScore": 8,
+      "scienceScore": 7,
+      "cultureScore": 5,
+      "diplomaticScore": 8,
       "leader": {
         "id": "LEADER_BISMARCK",
         "name": "Bismarck"
@@ -985,6 +1053,10 @@
       "id": "CIVILIZATION_GREECE",
       "slug": "greece",
       "name": "Greece",
+      "warlikeScore": 7,
+      "scienceScore": 4,
+      "cultureScore": 6,
+      "diplomaticScore": 9,
       "leader": {
         "id": "LEADER_ALEXANDER",
         "name": "Alexander"
@@ -1041,6 +1113,10 @@
       "id": "CIVILIZATION_HUNS",
       "slug": "huns",
       "name": "Huns",
+      "warlikeScore": 10,
+      "scienceScore": 4,
+      "cultureScore": 5,
+      "diplomaticScore": 2,
       "leader": {
         "id": "LEADER_ATTILA",
         "name": "Attila"
@@ -1083,6 +1159,10 @@
       "id": "CIVILIZATION_INCA",
       "slug": "inca",
       "name": "Inca",
+      "warlikeScore": 5,
+      "scienceScore": 8,
+      "cultureScore": 5,
+      "diplomaticScore": 4,
       "leader": {
         "id": "LEADER_PACHACUTI",
         "name": "Pachacuti"
@@ -1138,6 +1218,10 @@
       "id": "CIVILIZATION_INDIA",
       "slug": "india",
       "name": "India",
+      "warlikeScore": 3,
+      "scienceScore": 5,
+      "cultureScore": 6,
+      "diplomaticScore": 6,
       "leader": {
         "id": "LEADER_GANDHI",
         "name": "Gandhi"
@@ -1195,6 +1279,10 @@
       "id": "CIVILIZATION_INDONESIA",
       "slug": "indonesia",
       "name": "Indonesia",
+      "warlikeScore": 6,
+      "scienceScore": 4,
+      "cultureScore": 7,
+      "diplomaticScore": 6,
       "leader": {
         "id": "LEADER_GAJAH_MADA",
         "name": "Gajah Mada"
@@ -1248,6 +1336,10 @@
       "id": "CIVILIZATION_IROQUOIS",
       "slug": "iroquois",
       "name": "Iroquois",
+      "warlikeScore": 7,
+      "scienceScore": 4,
+      "cultureScore": 5,
+      "diplomaticScore": 5,
       "leader": {
         "id": "LEADER_HIAWATHA",
         "name": "Hiawatha"
@@ -1303,6 +1395,10 @@
       "id": "CIVILIZATION_JAPAN",
       "slug": "japan",
       "name": "Japan",
+      "warlikeScore": 8,
+      "scienceScore": 6,
+      "cultureScore": 7,
+      "diplomaticScore": 4,
       "leader": {
         "id": "LEADER_ODA_NOBUNAGA",
         "name": "Oda Nobunaga"
@@ -1360,6 +1456,10 @@
       "id": "CIVILIZATION_KOREA",
       "slug": "korea",
       "name": "Korea",
+      "warlikeScore": 4,
+      "scienceScore": 10,
+      "cultureScore": 5,
+      "diplomaticScore": 5,
       "leader": {
         "id": "LEADER_SEJONG",
         "name": "Sejong"
@@ -1416,6 +1516,10 @@
       "id": "CIVILIZATION_MAYA",
       "slug": "maya",
       "name": "Maya",
+      "warlikeScore": 5,
+      "scienceScore": 6,
+      "cultureScore": 6,
+      "diplomaticScore": 4,
       "leader": {
         "id": "LEADER_PACAL",
         "name": "Pacal"
@@ -1470,6 +1574,10 @@
       "id": "CIVILIZATION_MONGOLIA",
       "slug": "mongolia",
       "name": "Mongolia",
+      "warlikeScore": 10,
+      "scienceScore": 5,
+      "cultureScore": 4,
+      "diplomaticScore": 3,
       "leader": {
         "id": "LEADER_GENGHIS_KHAN",
         "name": "Genghis Khan"
@@ -1524,6 +1632,10 @@
       "id": "CIVILIZATION_MOROCCO",
       "slug": "morocco",
       "name": "Morocco",
+      "warlikeScore": 6,
+      "scienceScore": 4,
+      "cultureScore": 6,
+      "diplomaticScore": 8,
       "leader": {
         "id": "LEADER_AHMAD_ALMANSUR",
         "name": "Ahmad al-Mansur"
@@ -1580,6 +1692,10 @@
       "id": "CIVILIZATION_NETHERLANDS",
       "slug": "netherlands",
       "name": "Netherlands",
+      "warlikeScore": 4,
+      "scienceScore": 4,
+      "cultureScore": 7,
+      "diplomaticScore": 8,
       "leader": {
         "id": "LEADER_WILLIAM",
         "name": "William of Orange"
@@ -1633,6 +1749,10 @@
       "id": "CIVILIZATION_OTTOMAN",
       "slug": "ottoman",
       "name": "Ottoman",
+      "warlikeScore": 8,
+      "scienceScore": 7,
+      "cultureScore": 6,
+      "diplomaticScore": 7,
       "leader": {
         "id": "LEADER_SULEIMAN",
         "name": "Suleiman"
@@ -1685,6 +1805,10 @@
       "id": "CIVILIZATION_PERSIA",
       "slug": "persia",
       "name": "Persia",
+      "warlikeScore": 7,
+      "scienceScore": 4,
+      "cultureScore": 8,
+      "diplomaticScore": 5,
       "leader": {
         "id": "LEADER_DARIUS",
         "name": "Darius I"
@@ -1740,6 +1864,10 @@
       "id": "CIVILIZATION_POLAND",
       "slug": "poland",
       "name": "Poland",
+      "warlikeScore": 7,
+      "scienceScore": 5,
+      "cultureScore": 7,
+      "diplomaticScore": 7,
       "leader": {
         "id": "LEADER_CASIMIR",
         "name": "Casimir III"
@@ -1798,6 +1926,10 @@
       "id": "CIVILIZATION_POLYNESIA",
       "slug": "polynesia",
       "name": "Polynesia",
+      "warlikeScore": 6,
+      "scienceScore": 3,
+      "cultureScore": 6,
+      "diplomaticScore": 4,
       "leader": {
         "id": "LEADER_KAMEHAMEHA",
         "name": "Kamehameha"
@@ -1852,6 +1984,10 @@
       "id": "CIVILIZATION_PORTUGAL",
       "slug": "portugal",
       "name": "Portugal",
+      "warlikeScore": 5,
+      "scienceScore": 8,
+      "cultureScore": 5,
+      "diplomaticScore": 8,
       "leader": {
         "id": "LEADER_MARIA_I",
         "name": "Maria I"
@@ -1909,6 +2045,10 @@
       "id": "CIVILIZATION_ROME",
       "slug": "rome",
       "name": "Rome",
+      "warlikeScore": 9,
+      "scienceScore": 5,
+      "cultureScore": 6,
+      "diplomaticScore": 7,
       "leader": {
         "id": "LEADER_AUGUSTUS",
         "name": "Augustus"
@@ -1963,6 +2103,10 @@
       "id": "CIVILIZATION_RUSSIA",
       "slug": "russia",
       "name": "Russia",
+      "warlikeScore": 7,
+      "scienceScore": 7,
+      "cultureScore": 5,
+      "diplomaticScore": 5,
       "leader": {
         "id": "LEADER_CATHERINE",
         "name": "Catherine"
@@ -2021,6 +2165,10 @@
       "id": "CIVILIZATION_SHOSHONE",
       "slug": "shoshone",
       "name": "Shoshone",
+      "warlikeScore": 6,
+      "scienceScore": 6,
+      "cultureScore": 4,
+      "diplomaticScore": 4,
       "leader": {
         "id": "LEADER_POCATELLO",
         "name": "Pocatello"
@@ -2077,6 +2225,10 @@
       "id": "CIVILIZATION_SIAM",
       "slug": "siam",
       "name": "Siam",
+      "warlikeScore": 5,
+      "scienceScore": 6,
+      "cultureScore": 5,
+      "diplomaticScore": 10,
       "leader": {
         "id": "LEADER_RAMKHAMHAENG",
         "name": "Ramkhamhaeng"
@@ -2131,6 +2283,10 @@
       "id": "CIVILIZATION_SONGHAI",
       "slug": "songhai",
       "name": "Songhai",
+      "warlikeScore": 8,
+      "scienceScore": 4,
+      "cultureScore": 5,
+      "diplomaticScore": 6,
       "leader": {
         "id": "LEADER_ASKIA",
         "name": "Askia"
@@ -2189,6 +2345,10 @@
       "id": "CIVILIZATION_SPAIN",
       "slug": "spain",
       "name": "Spain",
+      "warlikeScore": 7,
+      "scienceScore": 4,
+      "cultureScore": 8,
+      "diplomaticScore": 6,
       "leader": {
         "id": "LEADER_ISABELLA",
         "name": "Isabella"
@@ -2253,6 +2413,10 @@
       "id": "CIVILIZATION_SWEDEN",
       "slug": "sweden",
       "name": "Sweden",
+      "warlikeScore": 8,
+      "scienceScore": 8,
+      "cultureScore": 8,
+      "diplomaticScore": 9,
       "leader": {
         "id": "LEADER_GUSTAVUS_ADOLPHUS",
         "name": "Gustavus Adolphus"
@@ -2311,6 +2475,10 @@
       "id": "CIVILIZATION_VENICE",
       "slug": "venice",
       "name": "Venice",
+      "warlikeScore": 5,
+      "scienceScore": 5,
+      "cultureScore": 6,
+      "diplomaticScore": 10,
       "leader": {
         "id": "LEADER_ENRICO_DANDOLO",
         "name": "Enrico Dondolo"
@@ -2365,6 +2533,10 @@
       "id": "CIVILIZATION_ZULU",
       "slug": "zulu",
       "name": "Zulu",
+      "warlikeScore": 10,
+      "scienceScore": 5,
+      "cultureScore": 6,
+      "diplomaticScore": 4,
       "leader": {
         "id": "LEADER_SHAKA",
         "name": "Shaka"
