@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 import {
   Button,
-  Checkbox,
+  Chip,
   Dialog,
-  Divider,
+  Menu,
   Switch,
   Text,
   TextInput,
@@ -39,11 +39,13 @@ export function PlayerSelectionPreferencesModal({
   );
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [excludeMenuVisible, setExcludeMenuVisible] = useState(false);
 
   useEffect(() => {
     if (!visible) return;
     setPreferences(initialPreferences);
     setSaveError(null);
+    setExcludeMenuVisible(false);
   }, [visible, initialPreferences]);
 
   const sortedCivilizations = useMemo(
@@ -51,16 +53,35 @@ export function PlayerSelectionPreferencesModal({
     [civilizations],
   );
 
-  const toggleExcludedSlug = (slug: string) => {
-    setPreferences((current) => {
-      const excluded = new Set(current.excludedSlugs);
-      if (excluded.has(slug)) {
-        excluded.delete(slug);
-      } else {
-        excluded.add(slug);
-      }
-      return { ...current, excludedSlugs: [...excluded] };
-    });
+  const excludedCivilizations = useMemo(
+    () =>
+      sortedCivilizations.filter((civilization) =>
+        preferences.excludedSlugs.includes(civilization.slug),
+      ),
+    [sortedCivilizations, preferences.excludedSlugs],
+  );
+
+  const civilizationsAvailableToExclude = useMemo(
+    () =>
+      sortedCivilizations.filter(
+        (civilization) => !preferences.excludedSlugs.includes(civilization.slug),
+      ),
+    [sortedCivilizations, preferences.excludedSlugs],
+  );
+
+  const addExcludedSlug = (slug: string) => {
+    setPreferences((current) => ({
+      ...current,
+      excludedSlugs: [...current.excludedSlugs, slug],
+    }));
+    setExcludeMenuVisible(false);
+  };
+
+  const removeExcludedSlug = (slug: string) => {
+    setPreferences((current) => ({
+      ...current,
+      excludedSlugs: current.excludedSlugs.filter((excluded) => excluded !== slug),
+    }));
   };
 
   const handleSave = async () => {
@@ -121,33 +142,49 @@ export function PlayerSelectionPreferencesModal({
           Excluded civilizations
         </Text>
         <Text variant="bodySmall" className="mb-2 text-on-surface-variant">
-          Checked civilizations will not be picked randomly for this player.
+          Excluded civilizations will not be picked randomly for this player.
         </Text>
-      </Dialog.Content>
-      <Dialog.ScrollArea style={{ paddingHorizontal: 0 }}>
-        <ScrollView keyboardShouldPersistTaps="handled">
-          <View className="px-6 py-2">
-            {sortedCivilizations.map((civilization, index) => (
-              <View key={civilization.slug}>
-                {index > 0 ? <Divider className="bg-outline" /> : null}
-                <Checkbox.Item
-                  label={`${civilization.name} (${civilization.leader.name})`}
-                  status={
-                    preferences.excludedSlugs.includes(civilization.slug)
-                      ? 'checked'
-                      : 'unchecked'
-                  }
-                  onPress={() => toggleExcludedSlug(civilization.slug)}
-                  disabled={isSaving}
-                />
-              </View>
+        <Menu
+          visible={excludeMenuVisible}
+          onDismiss={() => setExcludeMenuVisible(false)}
+          anchor={
+            <Button
+              mode="outlined"
+              icon="chevron-down"
+              onPress={() => setExcludeMenuVisible(true)}
+              disabled={isSaving || civilizationsAvailableToExclude.length === 0}
+              contentStyle={{ flexDirection: 'row-reverse' }}>
+              Add civilization to exclude
+            </Button>
+          }>
+          {civilizationsAvailableToExclude.map((civilization) => (
+            <Menu.Item
+              key={civilization.slug}
+              title={`${civilization.name} (${civilization.leader.name})`}
+              onPress={() => addExcludedSlug(civilization.slug)}
+            />
+          ))}
+        </Menu>
+        {excludedCivilizations.length > 0 ? (
+          <View className="mt-3 flex-row flex-wrap gap-2">
+            {excludedCivilizations.map((civilization) => (
+              <Chip
+                key={civilization.slug}
+                mode="outlined"
+                onClose={() => removeExcludedSlug(civilization.slug)}
+                closeIconAccessibilityLabel={`Remove ${civilization.name} from exclusions`}
+                disabled={isSaving}>
+                {civilization.name}
+              </Chip>
             ))}
           </View>
-        </ScrollView>
-      </Dialog.ScrollArea>
-      <Dialog.Content>
+        ) : (
+          <Text variant="bodySmall" className="mt-2 text-on-surface-variant">
+            No civilizations excluded.
+          </Text>
+        )}
         {saveError ? (
-          <Text variant="bodySmall" className="text-red-700">
+          <Text variant="bodySmall" className="mt-3 text-red-700">
             {saveError}
           </Text>
         ) : null}
