@@ -60,6 +60,25 @@ function assignCivilizationsForPlayers(
   return next;
 }
 
+function getHandPickCivilizations(
+  playerId: number,
+  assignments: Record<number, Civilization>,
+  civilizations: Civilization[],
+): { civilization: Civilization; available: boolean }[] {
+  const usedByOthers = new Set(
+    Object.entries(assignments)
+      .filter(([id]) => Number(id) !== playerId)
+      .map(([, civ]) => civ.slug),
+  );
+
+  return [...civilizations]
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((civilization) => ({
+      civilization,
+      available: !usedByOthers.has(civilization.slug),
+    }));
+}
+
 function rerollCivilizationForPlayer(
   playerId: number,
   assignments: Record<number, Civilization>,
@@ -99,6 +118,7 @@ export default function SelectScreen() {
   const [isCommitting, setIsCommitting] = useState(false);
   const [playerToDelete, setPlayerToDelete] = useState<Player | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [handPickPlayerId, setHandPickPlayerId] = useState<number | null>(null);
   const civilizations = useMemo(() => getAllCivilizations(), []);
 
   const gamePlayers = useMemo(
@@ -157,6 +177,29 @@ export default function SelectScreen() {
       if (!pick) return previous;
       return { ...previous, [playerId]: pick };
     });
+  };
+
+  const handPickPlayer = useMemo(
+    () => gamePlayers.find((player) => player.id === handPickPlayerId) ?? null,
+    [gamePlayers, handPickPlayerId],
+  );
+
+  const handPickOptions = useMemo(() => {
+    if (handPickPlayerId == null) return [];
+    return getHandPickCivilizations(
+      handPickPlayerId,
+      civilizationAssignments,
+      civilizations,
+    );
+  }, [handPickPlayerId, civilizationAssignments, civilizations]);
+
+  const handleHandPick = (civilization: Civilization) => {
+    if (handPickPlayerId == null) return;
+    setCivilizationAssignments((previous) => ({
+      ...previous,
+      [handPickPlayerId]: civilization,
+    }));
+    setHandPickPlayerId(null);
   };
 
   const handleCommitGame = async () => {
@@ -293,6 +336,45 @@ export default function SelectScreen() {
           </Dialog.Actions>
         </Dialog>
         <Dialog
+          visible={handPickPlayer != null}
+          onDismiss={() => setHandPickPlayerId(null)}
+          style={{ maxHeight: '90%' }}>
+          <Dialog.Title>Hand pick civilization</Dialog.Title>
+          <Dialog.Content>
+            {handPickPlayer ? (
+              <Text variant="bodyMedium" className="mb-2 text-on-surface-variant">
+                Choose a civilization for {handPickPlayer.name}.
+              </Text>
+            ) : null}
+          </Dialog.Content>
+          <Dialog.ScrollArea style={{ paddingHorizontal: 0 }}>
+            <ScrollView keyboardShouldPersistTaps="handled">
+              <View className="px-6 py-2">
+                {handPickOptions.map(({ civilization, available }, index) => {
+                  const isSelected =
+                    handPickPlayerId != null &&
+                    civilizationAssignments[handPickPlayerId]?.slug === civilization.slug;
+
+                  return (
+                    <View key={civilization.slug}>
+                      {index > 0 ? <Divider className="bg-outline" /> : null}
+                      <Checkbox.Item
+                        label={`${civilization.name} (${civilization.leader.name})`}
+                        status={isSelected ? 'checked' : 'unchecked'}
+                        disabled={!available}
+                        onPress={() => handleHandPick(civilization)}
+                      />
+                    </View>
+                  );
+                })}
+              </View>
+            </ScrollView>
+          </Dialog.ScrollArea>
+          <Dialog.Actions>
+            <Button onPress={() => setHandPickPlayerId(null)}>Cancel</Button>
+          </Dialog.Actions>
+        </Dialog>
+        <Dialog
           visible={playerToDelete != null}
           onDismiss={() => !isDeleting && setPlayerToDelete(null)}>
           <Dialog.Title>Delete player?</Dialog.Title>
@@ -349,13 +431,20 @@ export default function SelectScreen() {
                         className="uppercase tracking-wide text-on-surface-variant">
                         {civilization.leader.name}
                       </Text>
-                      <Button
-                        mode="outlined"
-                        compact
-                        className="mt-2 self-start"
-                        onPress={() => handleReroll(player.id)}>
-                        Reroll
-                      </Button>
+                      <View className="mt-2 flex-row flex-wrap gap-2">
+                        <Button
+                          mode="outlined"
+                          compact
+                          onPress={() => handleReroll(player.id)}>
+                          Reroll
+                        </Button>
+                        <Button
+                          mode="outlined"
+                          compact
+                          onPress={() => setHandPickPlayerId(player.id)}>
+                          Hand pick
+                        </Button>
+                      </View>
                     </View>
                     <CivilizationEmblem name={civilization.name} />
                   </View>
