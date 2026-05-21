@@ -1,4 +1,5 @@
 import { router, Tabs } from 'expo-router';
+import { Platform } from 'react-native';
 
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { imperialColors, imperialFonts } from '@/constants/theme';
@@ -17,15 +18,23 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
+        tabBarPosition: 'top',
         tabBarActiveTintColor: imperialColors.secondary,
         tabBarInactiveTintColor: imperialColors.muted,
         tabBarStyle: {
           backgroundColor: imperialColors.surface,
-          borderTopColor: imperialColors.outline,
-          borderTopWidth: 1,
-          borderTopLeftRadius: 9999,
-          borderTopRightRadius: 9999,
-          paddingTop: 8,
+          borderBottomColor: imperialColors.outline,
+          borderBottomWidth: 1,
+          ...(Platform.OS === 'web'
+            ? {
+                borderBottomLeftRadius: 9999,
+                borderBottomRightRadius: 9999,
+              }
+            : {
+                borderBottomLeftRadius: 0,
+                borderBottomRightRadius: 0,
+              }),
+          paddingBottom: 8,
           height: 64,
         },
         headerStyle: {
