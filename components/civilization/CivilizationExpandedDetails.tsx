@@ -5,6 +5,8 @@ import { imperialColors } from '@/constants/theme';
 import type { Civilization } from '@/types';
 import { getCivilizationFlavor } from '@/utils/civilization';
 
+import { CivilizationScores } from './CivilizationScores';
+
 function UniqueAssetColumn({
   title,
   items,
@@ -75,6 +77,8 @@ export function CivilizationExpandedDetails({
 
   return (
     <View className="gap-4">
+      <CivilizationScores civilization={civilization} />
+
       {flavor ? (
         <Text variant="bodyMedium" className="italic text-on-surface-variant">
           {flavor}
