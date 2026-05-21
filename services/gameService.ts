@@ -51,6 +51,15 @@ export type CivilizationWinCount = {
   wins: number;
 };
 
+export type PlayerWinLeaderboardEntry = {
+  kind: 'human' | 'ai';
+  playerId: number | null;
+  name: string;
+  wins: number;
+};
+
+const AI_LEADERBOARD_KEY = 'ai';
+
 type GameHistoryRow = {
   game_id: number;
   played_at: string;
@@ -541,6 +550,92 @@ type GamePlayerCivRow = {
   civilization_key: string;
 };
 
+async function fetchGamesWithWinners(): Promise<GameWinnerRow[]> {
+  if (useAsyncSqlite()) {
+    const sqlite = getDatabase().$client;
+    return sqlite.getAllAsync<GameWinnerRow>(
+      `SELECT id, winner_kind, winner_player_ids, winner_civilization_key
+       FROM games
+       WHERE winner_kind IS NOT NULL`,
+    );
+  }
+
+  const db = getDatabase();
+  const gameRows = await db
+    .select({
+      id: games.id,
+      winnerKind: games.winnerKind,
+      winnerPlayerIds: games.winnerPlayerIds,
+      winnerCivilizationKey: games.winnerCivilizationKey,
+    })
+    .from(games)
+    .where(isNotNull(games.winnerKind));
+
+  return gameRows.map((row) => ({
+    id: row.id,
+    winner_kind: row.winnerKind!,
+    winner_player_ids: row.winnerPlayerIds,
+    winner_civilization_key: row.winnerCivilizationKey,
+  }));
+}
+
+async function fetchGamePlayerRows(gameIds: number[]): Promise<GamePlayerCivRow[]> {
+  if (gameIds.length === 0) {
+    return [];
+  }
+
+  if (useAsyncSqlite()) {
+    const sqlite = getDatabase().$client;
+    const placeholders = gameIds.map(() => '?').join(', ');
+    return sqlite.getAllAsync<GamePlayerCivRow>(
+      `SELECT game_id, player_id, civilization_key
+       FROM game_players
+       WHERE game_id IN (${placeholders})`,
+      ...gameIds,
+    );
+  }
+
+  const db = getDatabase();
+  const playerRows = await db
+    .select({
+      gameId: gamePlayers.gameId,
+      playerId: gamePlayers.playerId,
+      civilizationKey: gamePlayers.civilizationKey,
+    })
+    .from(gamePlayers)
+    .where(inArray(gamePlayers.gameId, gameIds));
+
+  return playerRows.map((row) => ({
+    game_id: row.gameId,
+    player_id: row.playerId,
+    civilization_key: row.civilizationKey,
+  }));
+}
+
+async function resolvePlayerNames(playerIds: number[]): Promise<Map<number, string>> {
+  if (playerIds.length === 0) {
+    return new Map();
+  }
+
+  if (useAsyncSqlite()) {
+    const sqlite = getDatabase().$client;
+    const placeholders = playerIds.map(() => '?').join(', ');
+    const rows = await sqlite.getAllAsync<{ id: number; name: string }>(
+      `SELECT id, name FROM players WHERE id IN (${placeholders})`,
+      ...playerIds,
+    );
+    return new Map(rows.map((row) => [row.id, row.name]));
+  }
+
+  const db = getDatabase();
+  const rows = await db
+    .select({ id: players.id, name: players.name })
+    .from(players)
+    .where(inArray(players.id, playerIds));
+
+  return new Map(rows.map((row) => [row.id, row.name]));
+}
+
 function aggregateCivilizationWins(
   gameRows: GameWinnerRow[],
   playerRows: GamePlayerCivRow[],
@@ -587,6 +682,39 @@ function aggregateCivilizationWins(
     .sort((a, b) => b.wins - a.wins || a.civilizationKey.localeCompare(b.civilizationKey));
 }
 
+function aggregatePlayerWins(gameRows: GameWinnerRow[]): Map<string, number> {
+  const winCounts = new Map<string, number>();
+
+  const increment = (key: string) => {
+    winCounts.set(key, (winCounts.get(key) ?? 0) + 1);
+  };
+
+  for (const game of gameRows) {
+    if (game.winner_kind === 'ai') {
+      increment(AI_LEADERBOARD_KEY);
+      continue;
+    }
+
+    if (game.winner_kind !== 'human') {
+      continue;
+    }
+
+    for (const playerId of parseWinnerPlayerIds(game.winner_player_ids)) {
+      increment(String(playerId));
+    }
+  }
+
+  return winCounts;
+}
+
+function sortPlayerLeaderboard(
+  entries: PlayerWinLeaderboardEntry[],
+): PlayerWinLeaderboardEntry[] {
+  return entries.sort(
+    (a, b) => b.wins - a.wins || a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }),
+  );
+}
+
 export async function getTopCivilizationsByWins(
   limit = 3,
 ): Promise<CivilizationWinCount[]> {
@@ -594,64 +722,58 @@ export async function getTopCivilizationsByWins(
     return [];
   }
 
-  if (useAsyncSqlite()) {
-    const sqlite = getDatabase().$client;
-    const gameRows = await sqlite.getAllAsync<GameWinnerRow>(
-      `SELECT id, winner_kind, winner_player_ids, winner_civilization_key
-       FROM games
-       WHERE winner_kind IS NOT NULL`,
-    );
-    if (gameRows.length === 0) {
-      return [];
-    }
-
-    const placeholders = gameRows.map(() => '?').join(', ');
-    const playerRows = await sqlite.getAllAsync<GamePlayerCivRow>(
-      `SELECT game_id, player_id, civilization_key
-       FROM game_players
-       WHERE game_id IN (${placeholders})`,
-      ...gameRows.map((row) => row.id),
-    );
-
-    return aggregateCivilizationWins(gameRows, playerRows).slice(0, limit);
-  }
-
-  const db = getDatabase();
-  const gameRows = await db
-    .select({
-      id: games.id,
-      winnerKind: games.winnerKind,
-      winnerPlayerIds: games.winnerPlayerIds,
-      winnerCivilizationKey: games.winnerCivilizationKey,
-    })
-    .from(games)
-    .where(isNotNull(games.winnerKind));
-
+  const gameRows = await fetchGamesWithWinners();
   if (gameRows.length === 0) {
     return [];
   }
 
-  const gameIds = gameRows.map((row) => row.id);
-  const playerRows = await db
-    .select({
-      gameId: gamePlayers.gameId,
-      playerId: gamePlayers.playerId,
-      civilizationKey: gamePlayers.civilizationKey,
-    })
-    .from(gamePlayers)
-    .where(inArray(gamePlayers.gameId, gameIds));
+  const playerRows = await fetchGamePlayerRows(gameRows.map((row) => row.id));
+  return aggregateCivilizationWins(gameRows, playerRows).slice(0, limit);
+}
 
-  return aggregateCivilizationWins(
-    gameRows.map((row) => ({
-      id: row.id,
-      winner_kind: row.winnerKind!,
-      winner_player_ids: row.winnerPlayerIds,
-      winner_civilization_key: row.winnerCivilizationKey,
-    })),
-    playerRows.map((row) => ({
-      game_id: row.gameId,
-      player_id: row.playerId,
-      civilization_key: row.civilizationKey,
-    })),
-  ).slice(0, limit);
+export async function getTopPlayersByWins(
+  limit = 3,
+): Promise<PlayerWinLeaderboardEntry[]> {
+  if (limit <= 0) {
+    return [];
+  }
+
+  const gameRows = await fetchGamesWithWinners();
+  if (gameRows.length === 0) {
+    return [];
+  }
+
+  const winCounts = aggregatePlayerWins(gameRows);
+  if (winCounts.size === 0) {
+    return [];
+  }
+
+  const humanPlayerIds = Array.from(winCounts.keys())
+    .filter((key) => key !== AI_LEADERBOARD_KEY)
+    .map((key) => Number(key))
+    .filter((id) => Number.isFinite(id));
+
+  const namesById = await resolvePlayerNames(humanPlayerIds);
+
+  const entries: PlayerWinLeaderboardEntry[] = [];
+  for (const [key, wins] of winCounts.entries()) {
+    if (key === AI_LEADERBOARD_KEY) {
+      entries.push({ kind: 'ai', playerId: null, name: 'AI', wins });
+      continue;
+    }
+
+    const playerId = Number(key);
+    if (!Number.isFinite(playerId)) {
+      continue;
+    }
+
+    entries.push({
+      kind: 'human',
+      playerId,
+      name: namesById.get(playerId) ?? `Player ${playerId}`,
+      wins,
+    });
+  }
+
+  return sortPlayerLeaderboard(entries).slice(0, limit);
 }
