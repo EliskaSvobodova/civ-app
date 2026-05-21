@@ -15,7 +15,7 @@ import {
   type UpdateGameMatchInput,
 } from '@/services';
 
-function formatStartedAt(iso: string): string {
+function formatGameDate(iso: string): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) {
     return iso;
@@ -98,15 +98,29 @@ export default function HistoryScreen() {
               <ImperialCard className="overflow-hidden">
                 <View className="p-4">
                   <View className="flex-row items-start justify-between">
-                    <View className="min-w-0 flex-1">
-                      <Text
-                        variant="labelMedium"
-                        className="uppercase tracking-wide text-on-surface-variant">
-                        Started
-                      </Text>
-                      <Text variant="titleSmall" className="mt-0.5 font-serif text-primary">
-                        {formatStartedAt(entry.startedAt)}
-                      </Text>
+                    <View className="min-w-0 flex-1 flex-row flex-wrap gap-x-6 gap-y-2">
+                      <View>
+                        <Text
+                          variant="labelMedium"
+                          className="uppercase tracking-wide text-on-surface-variant">
+                          Started
+                        </Text>
+                        <Text variant="titleSmall" className="mt-0.5 font-serif text-primary">
+                          {formatGameDate(entry.startedAt)}
+                        </Text>
+                      </View>
+                      {entry.endedAt ? (
+                        <View>
+                          <Text
+                            variant="labelMedium"
+                            className="uppercase tracking-wide text-on-surface-variant">
+                            Ended
+                          </Text>
+                          <Text variant="titleSmall" className="mt-0.5 font-serif text-primary">
+                            {formatGameDate(entry.endedAt)}
+                          </Text>
+                        </View>
+                      ) : null}
                     </View>
                     <View className="flex-row">
                       <IconButton

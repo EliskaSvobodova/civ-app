@@ -17,6 +17,7 @@ export const games = sqliteTable('games', {
   winnerLeaderKey: text('winner_leader_key'),
   notes: text('notes'),
   playedAt: text('played_at').notNull(),
+  endedAt: text('ended_at'),
   createdAt: text('created_at').notNull(),
 });
 
