@@ -11,6 +11,7 @@ export {
   createGame,
   deleteGame,
   getGameHistory,
+  getGameDurationDays,
   getTopCivilizationsByWins,
   getTopPlayersByWins,
   updateGameMatch,

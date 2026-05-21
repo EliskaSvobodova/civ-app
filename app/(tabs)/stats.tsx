@@ -5,12 +5,14 @@ import { Divider, Text } from 'react-native-paper';
 
 import { CivilizationEmblem } from '@/components/civilization/CivilizationEmblem';
 import { CivilizationLeaderHeader } from '@/components/civilization/CivilizationLeaderHeader';
+import { GameLengthAxisChart } from '@/components/stats/GameLengthAxisChart';
 import { Heading } from '@/components/ui/Heading';
 import { ImperialCard } from '@/components/ui/ImperialCard';
 import { Screen } from '@/components/ui/Screen';
 import { imperialFonts } from '@/constants/theme';
 import {
   getCivilizationByKey,
+  getGameDurationDays,
   getTopCivilizationsByWins,
   getTopPlayersByWins,
   type CivilizationWinCount,
@@ -127,18 +129,22 @@ function StatsSection({
 export default function StatsScreen() {
   const [topCivs, setTopCivs] = useState<CivilizationWinCount[]>([]);
   const [topPlayers, setTopPlayers] = useState<PlayerWinLeaderboardEntry[]>([]);
+  const [gameDurations, setGameDurations] = useState<number[]>([]);
 
   const loadStats = useCallback(async () => {
     try {
-      const [civs, players] = await Promise.all([
+      const [civs, players, durations] = await Promise.all([
         getTopCivilizationsByWins(3),
         getTopPlayersByWins(3),
+        getGameDurationDays(),
       ]);
       setTopCivs(civs);
       setTopPlayers(players);
+      setGameDurations(durations);
     } catch {
       setTopCivs([]);
       setTopPlayers([]);
+      setGameDurations([]);
     }
   }, []);
 
@@ -148,7 +154,9 @@ export default function StatsScreen() {
     }, [loadStats]),
   );
 
-  const hasAnyStats = topCivs.length > 0 || topPlayers.length > 0;
+  const hasLeaderboards = topCivs.length > 0 || topPlayers.length > 0;
+  const showGameLengthChart = gameDurations.length >= 3;
+  const hasContent = hasLeaderboards || showGameLengthChart;
 
   return (
     <Screen className="flex-1 px-margin-mobile pt-4">
@@ -157,39 +165,62 @@ export default function StatsScreen() {
         Leaderboards from recorded match winners
       </Text>
 
-      {!hasAnyStats ? (
+      {!hasContent ? (
         <Text variant="bodyMedium" className="mt-3 text-on-surface-variant">
           No winners recorded yet. Commit games on Select, then set winners in Match history.
         </Text>
       ) : (
         <ScrollView className="mt-4 flex-1" keyboardShouldPersistTaps="handled">
-          <StatsSection
-            title="Top civilizations"
-            emptyMessage="No civilization wins recorded yet.">
-            {topCivs.length > 0
-              ? topCivs.map((entry, index) => (
-                  <View key={entry.civilizationKey} className={index > 0 ? 'mt-3' : 'mt-2'}>
-                    <CivilizationLeaderboardCard entry={entry} rank={index + 1} />
-                  </View>
-                ))
-              : null}
-          </StatsSection>
+          {hasLeaderboards ? (
+            <>
+              <StatsSection
+                title="Top civilizations"
+                emptyMessage="No civilization wins recorded yet.">
+                {topCivs.length > 0
+                  ? topCivs.map((entry, index) => (
+                      <View key={entry.civilizationKey} className={index > 0 ? 'mt-3' : 'mt-2'}>
+                        <CivilizationLeaderboardCard entry={entry} rank={index + 1} />
+                      </View>
+                    ))
+                  : null}
+              </StatsSection>
 
-          <Divider className="my-6 bg-outline" />
+              <Divider className="my-6 bg-outline" />
 
-          <StatsSection
-            title="Top players"
-            emptyMessage="No player wins recorded yet.">
-            {topPlayers.length > 0
-              ? topPlayers.map((entry, index) => (
-                  <View
-                    key={entry.kind === 'ai' ? 'ai' : entry.playerId}
-                    className={index > 0 ? 'mt-3' : 'mt-2'}>
-                    <PlayerLeaderboardCard entry={entry} rank={index + 1} />
+              <StatsSection
+                title="Top players"
+                emptyMessage="No player wins recorded yet.">
+                {topPlayers.length > 0
+                  ? topPlayers.map((entry, index) => (
+                      <View
+                        key={entry.kind === 'ai' ? 'ai' : entry.playerId}
+                        className={index > 0 ? 'mt-3' : 'mt-2'}>
+                        <PlayerLeaderboardCard entry={entry} rank={index + 1} />
+                      </View>
+                    ))
+                  : null}
+              </StatsSection>
+            </>
+          ) : null}
+
+          {showGameLengthChart ? (
+            <>
+              {hasLeaderboards ? <Divider className="my-6 bg-outline" /> : null}
+              <StatsSection
+                title="Game length"
+                emptyMessage="Record at least three matches to see game lengths.">
+                <ImperialCard className="overflow-hidden">
+                  <View className="p-4">
+                    <Text variant="bodySmall" className="text-on-surface-variant">
+                      Each point is one match, placed by how many days it lasted (start to end
+                      date).
+                    </Text>
+                    <GameLengthAxisChart durations={gameDurations} />
                   </View>
-                ))
-              : null}
-          </StatsSection>
+                </ImperialCard>
+              </StatsSection>
+            </>
+          ) : null}
         </ScrollView>
       )}
     </Screen>
