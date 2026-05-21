@@ -1,4 +1,5 @@
-import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { sql } from 'drizzle-orm';
+import { integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
 export const games = sqliteTable('games', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -19,11 +20,20 @@ export const games = sqliteTable('games', {
   createdAt: text('created_at').notNull(),
 });
 
-export const players = sqliteTable('players', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  name: text('name').notNull().unique(),
-  createdAt: text('created_at').notNull(),
-});
+export const players = sqliteTable(
+  'players',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    name: text('name').notNull(),
+    createdAt: text('created_at').notNull(),
+    deletedAt: text('deleted_at'),
+  },
+  (table) => [
+    uniqueIndex('players_name_active_unique')
+      .on(table.name)
+      .where(sql`${table.deletedAt} is null`),
+  ],
+);
 
 export const gamePlayers = sqliteTable('game_players', {
   id: integer('id').primaryKey({ autoIncrement: true }),

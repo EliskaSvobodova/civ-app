@@ -23,4 +23,4 @@ export {
   type UpdateGameMatchInput,
   type UpdateGameWinnerInput,
 } from './gameService';
-export { createPlayer, getAllPlayers, type Player } from './playerService';
+export { createPlayer, deletePlayer, getAllPlayers, type Player } from './playerService';
