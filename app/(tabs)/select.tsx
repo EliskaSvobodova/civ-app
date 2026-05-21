@@ -12,6 +12,7 @@ import {
 } from 'react-native-paper';
 
 import { CivilizationEmblem } from '@/components/civilization/CivilizationEmblem';
+import { PlayerSelectionPreferencesModal } from '@/components/player/PlayerSelectionPreferencesModal';
 import { Heading } from '@/components/ui/Heading';
 import { ImperialCard } from '@/components/ui/ImperialCard';
 import { Screen } from '@/components/ui/Screen';
@@ -21,23 +22,26 @@ import {
   deletePlayer,
   getAllCivilizations,
   getAllPlayers,
+  getPlayerSelectionPreferences,
+  getRecentCivilizationSlugsForPlayer,
+  savePlayerSelectionPreferences,
   type Player,
 } from '@/services';
 import type { Civilization } from '@/types';
+import {
+  DEFAULT_PLAYER_SELECTION_PREFERENCES,
+  type PlayerSelectionPreferences,
+} from '@/types/playerSelectionPreferences';
+import { pickRandomCivilizationForPlayer } from '@/utils/playerCivilizationSelection';
 
-function pickRandomCivilizationExcluding(
-  civilizations: Civilization[],
-  usedSlugs: Set<string>,
-): Civilization {
-  const available = civilizations.filter((civ) => !usedSlugs.has(civ.slug));
-  const pool = available.length > 0 ? available : civilizations;
-  return pool[Math.floor(Math.random() * pool.length)];
-}
+const MAX_RECENT_GAMES_LOOKUP = 20;
 
 function assignCivilizationsForPlayers(
   playerIds: number[],
   previous: Record<number, Civilization>,
   civilizations: Civilization[],
+  preferencesByPlayer: Record<number, PlayerSelectionPreferences>,
+  recentSlugsByPlayer: Record<number, Set<string>>,
 ): Record<number, Civilization> {
   const next: Record<number, Civilization> = {};
   const usedSlugs = new Set<string>();
@@ -52,7 +56,15 @@ function assignCivilizationsForPlayers(
 
   for (const id of playerIds) {
     if (next[id]) continue;
-    const pick = pickRandomCivilizationExcluding(civilizations, usedSlugs);
+    const preferences =
+      preferencesByPlayer[id] ?? DEFAULT_PLAYER_SELECTION_PREFERENCES;
+    const recentSlugs = recentSlugsByPlayer[id] ?? new Set<string>();
+    const pick = pickRandomCivilizationForPlayer(
+      civilizations,
+      usedSlugs,
+      preferences,
+      recentSlugs,
+    );
     next[id] = pick;
     usedSlugs.add(pick.slug);
   }
@@ -83,6 +95,8 @@ function rerollCivilizationForPlayer(
   playerId: number,
   assignments: Record<number, Civilization>,
   civilizations: Civilization[],
+  preferences: PlayerSelectionPreferences,
+  recentSlugs: Set<string>,
 ): Civilization | null {
   const current = assignments[playerId];
   if (!current) return null;
@@ -93,15 +107,13 @@ function rerollCivilizationForPlayer(
       .map(([, civ]) => civ.slug),
   );
 
-  let pool = civilizations.filter(
-    (civ) => civ.slug !== current.slug && !usedByOthers.has(civ.slug),
+  return pickRandomCivilizationForPlayer(
+    civilizations,
+    usedByOthers,
+    preferences,
+    recentSlugs,
+    { excludeSlug: current.slug },
   );
-  if (pool.length === 0) {
-    pool = civilizations.filter((civ) => civ.slug !== current.slug);
-  }
-  if (pool.length === 0) return current;
-
-  return pool[Math.floor(Math.random() * pool.length)];
 }
 
 export default function SelectScreen() {
@@ -119,6 +131,13 @@ export default function SelectScreen() {
   const [playerToDelete, setPlayerToDelete] = useState<Player | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [handPickPlayerId, setHandPickPlayerId] = useState<number | null>(null);
+  const [playerToModify, setPlayerToModify] = useState<Player | null>(null);
+  const [playerPreferences, setPlayerPreferences] = useState<
+    Record<number, PlayerSelectionPreferences>
+  >({});
+  const [recentSlugsByPlayer, setRecentSlugsByPlayer] = useState<
+    Record<number, Set<string>>
+  >({});
   const civilizations = useMemo(() => getAllCivilizations(), []);
 
   const gamePlayers = useMemo(
@@ -126,10 +145,40 @@ export default function SelectScreen() {
     [players, gamePlayerIds],
   );
 
+  const loadPlayerMetadata = useCallback(async (list: Player[]) => {
+    if (list.length === 0) {
+      setPlayerPreferences({});
+      setRecentSlugsByPlayer({});
+      return;
+    }
+
+    const [preferencesEntries, recentEntries] = await Promise.all([
+      Promise.all(
+        list.map(async (player) => {
+          const preferences = await getPlayerSelectionPreferences(player.id);
+          return [player.id, preferences] as const;
+        }),
+      ),
+      Promise.all(
+        list.map(async (player) => {
+          const slugs = await getRecentCivilizationSlugsForPlayer(
+            player.id,
+            MAX_RECENT_GAMES_LOOKUP,
+          );
+          return [player.id, new Set(slugs)] as const;
+        }),
+      ),
+    ]);
+
+    setPlayerPreferences(Object.fromEntries(preferencesEntries));
+    setRecentSlugsByPlayer(Object.fromEntries(recentEntries));
+  }, []);
+
   const loadPlayers = useCallback(async () => {
     const list = await getAllPlayers();
     setPlayers(list);
-  }, []);
+    await loadPlayerMetadata(list);
+  }, [loadPlayerMetadata]);
 
   useEffect(() => {
     loadPlayers().catch(() => setPlayers([]));
@@ -167,16 +216,68 @@ export default function SelectScreen() {
     }
 
     setCivilizationAssignments((previous) =>
-      assignCivilizationsForPlayers(gamePlayerIds, previous, civilizations),
+      assignCivilizationsForPlayers(
+        gamePlayerIds,
+        previous,
+        civilizations,
+        playerPreferences,
+        recentSlugsByPlayer,
+      ),
     );
-  }, [gamePlayerIds, civilizations]);
+  }, [gamePlayerIds, civilizations, playerPreferences, recentSlugsByPlayer]);
 
   const handleReroll = (playerId: number) => {
+    const preferences =
+      playerPreferences[playerId] ?? DEFAULT_PLAYER_SELECTION_PREFERENCES;
+    const recentSlugs = recentSlugsByPlayer[playerId] ?? new Set<string>();
+
     setCivilizationAssignments((previous) => {
-      const pick = rerollCivilizationForPlayer(playerId, previous, civilizations);
+      const pick = rerollCivilizationForPlayer(
+        playerId,
+        previous,
+        civilizations,
+        preferences,
+        recentSlugs,
+      );
       if (!pick) return previous;
       return { ...previous, [playerId]: pick };
     });
+  };
+
+  const modifyPlayerPreferences =
+    playerToModify != null
+      ? (playerPreferences[playerToModify.id] ?? DEFAULT_PLAYER_SELECTION_PREFERENCES)
+      : DEFAULT_PLAYER_SELECTION_PREFERENCES;
+
+  const handleSavePlayerPreferences = async (preferences: PlayerSelectionPreferences) => {
+    if (!playerToModify) return;
+
+    await savePlayerSelectionPreferences(playerToModify.id, preferences);
+
+    const recentSlugs = preferences.avoidRecentlyPlayed
+      ? new Set(
+          await getRecentCivilizationSlugsForPlayer(
+            playerToModify.id,
+            preferences.recentGamesCount,
+          ),
+        )
+      : new Set<string>();
+
+    setPlayerPreferences((current) => ({ ...current, [playerToModify.id]: preferences }));
+    setRecentSlugsByPlayer((current) => ({ ...current, [playerToModify.id]: recentSlugs }));
+
+    if (gamePlayerIds.includes(playerToModify.id)) {
+      setCivilizationAssignments((previous) => {
+        const { [playerToModify.id]: _removed, ...rest } = previous;
+        return assignCivilizationsForPlayers(
+          gamePlayerIds,
+          rest,
+          civilizations,
+          { ...playerPreferences, [playerToModify.id]: preferences },
+          { ...recentSlugsByPlayer, [playerToModify.id]: recentSlugs },
+        );
+      });
+    }
   };
 
   const handPickPlayer = useMemo(
@@ -276,6 +377,12 @@ export default function SelectScreen() {
                 />
                 </View>
                 <IconButton
+                  icon="tune"
+                  size={20}
+                  onPress={() => setPlayerToModify(player)}
+                  accessibilityLabel={`Modify ${player.name}`}
+                />
+                <IconButton
                   icon="delete"
                   size={20}
                   onPress={() => setPlayerToDelete(player)}
@@ -374,6 +481,14 @@ export default function SelectScreen() {
             <Button onPress={() => setHandPickPlayerId(null)}>Cancel</Button>
           </Dialog.Actions>
         </Dialog>
+        <PlayerSelectionPreferencesModal
+          player={playerToModify}
+          civilizations={civilizations}
+          visible={playerToModify != null}
+          initialPreferences={modifyPlayerPreferences}
+          onDismiss={() => setPlayerToModify(null)}
+          onSave={handleSavePlayerPreferences}
+        />
         <Dialog
           visible={playerToDelete != null}
           onDismiss={() => !isDeleting && setPlayerToDelete(null)}>
