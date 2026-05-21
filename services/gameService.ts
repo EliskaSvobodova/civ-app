@@ -4,6 +4,7 @@ import { Platform } from 'react-native';
 
 import { gamePlayers, games, getDatabase, players } from '@/database';
 import type { Civilization } from '@/types';
+import { gameDurationDays } from '@/utils/gameDateTime';
 
 import {
   getCivilizationByKey,
@@ -788,4 +789,34 @@ export async function getTopPlayersByWins(
   }
 
   return sortPlayerLeaderboard(entries).slice(0, limit);
+}
+
+type GameDateRow = {
+  played_at: string;
+  ended_at: string | null;
+};
+
+export async function getGameDurationDays(): Promise<number[]> {
+  if (useAsyncSqlite()) {
+    const sqlite = getDatabase().$client;
+    const rows = await sqlite.getAllAsync<GameDateRow>(
+      `SELECT played_at, ended_at FROM games ORDER BY played_at ASC`,
+    );
+    return rows.map((row) =>
+      gameDurationDays(row.played_at, row.ended_at ?? row.played_at),
+    );
+  }
+
+  const db = getDatabase();
+  const rows = await db
+    .select({
+      playedAt: games.playedAt,
+      endedAt: games.endedAt,
+    })
+    .from(games)
+    .orderBy(games.playedAt);
+
+  return rows.map((row) =>
+    gameDurationDays(row.playedAt, row.endedAt ?? row.playedAt),
+  );
 }

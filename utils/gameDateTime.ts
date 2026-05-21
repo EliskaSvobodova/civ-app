@@ -1,3 +1,19 @@
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+/** Inclusive calendar days between two ISO timestamps (minimum 1). */
+export function gameDurationDays(startedAt: string, endedAt: string): number {
+  const start = new Date(startedAt);
+  const end = new Date(endedAt);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    return 1;
+  }
+
+  const startDay = new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime();
+  const endDay = new Date(end.getFullYear(), end.getMonth(), end.getDate()).getTime();
+  const diff = Math.round((endDay - startDay) / MS_PER_DAY);
+  return Math.max(1, diff + 1);
+}
+
 /** Today's local calendar date for date inputs: YYYY-MM-DD */
 export function todayLocalDateInput(): string {
   return isoToLocalDateInput(new Date().toISOString());
