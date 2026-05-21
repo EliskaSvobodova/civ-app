@@ -308,6 +308,39 @@ export async function getGameHistory(): Promise<GameHistoryEntry[]> {
   );
 }
 
+export async function getRecentCivilizationSlugsForPlayer(
+  playerId: number,
+  gameCount: number,
+): Promise<string[]> {
+  const limit = Math.max(1, Math.min(Math.floor(gameCount), 20));
+
+  if (useAsyncSqlite()) {
+    const sqlite = getDatabase().$client;
+    const rows = await sqlite.getAllAsync<{ civilization_key: string }>(
+      `SELECT gp.civilization_key
+       FROM game_players gp
+       INNER JOIN games g ON g.id = gp.game_id
+       WHERE gp.player_id = ?
+       ORDER BY g.played_at DESC
+       LIMIT ?`,
+      playerId,
+      limit,
+    );
+    return rows.map((row) => row.civilization_key);
+  }
+
+  const db = getDatabase();
+  const rows = await db
+    .select({ civilizationKey: gamePlayers.civilizationKey })
+    .from(gamePlayers)
+    .innerJoin(games, eq(games.id, gamePlayers.gameId))
+    .where(eq(gamePlayers.playerId, playerId))
+    .orderBy(desc(games.playedAt))
+    .limit(limit);
+
+  return rows.map((row) => row.civilizationKey);
+}
+
 function winnerFields(winner: UpdateGameWinnerInput) {
   return {
     winnerKind: winner.kind,

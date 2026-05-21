@@ -11,6 +11,7 @@ export {
   createGame,
   deleteGame,
   getGameHistory,
+  getRecentCivilizationSlugsForPlayer,
   getGameDurationDays,
   getTopCivilizationsByWins,
   getTopPlayersByWins,
@@ -28,4 +29,8 @@ export {
   type UpdateGameMatchInput,
   type UpdateGameWinnerInput,
 } from './gameService';
+export {
+  getPlayerSelectionPreferences,
+  savePlayerSelectionPreferences,
+} from './playerPreferencesService';
 export { createPlayer, deletePlayer, getAllPlayers, type Player } from './playerService';
