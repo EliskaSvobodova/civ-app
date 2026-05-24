@@ -1,171 +1,199 @@
 # Civ App
 
-A mobile companion app for **Sid Meier’s Civilization V** players focused on:
+A mobile companion app for **Sid Meier’s Civilization V** (Vox Populi mod) players focused on:
 
-* intelligent civilization selection,
-* leader pick history tracking,
-* and long-term gameplay statistics.
+* browsing civilization and leader reference data,
+* multiplayer-friendly random leader assignment,
+* match history and win tracking,
+* and lightweight statistics.
 
 The project is intentionally designed as:
 
 * offline-first,
 * lightweight,
 * easy to maintain,
-* and optimized for rapid AI-assisted development using Cursor
+* and optimized for rapid AI-assisted development using Cursor.
 
 
 # Core Features
 
-## Civilization selection
+## Civilization library (implemented)
 
-* Completely random civilization selection
-* Random selection from custom subsets - civilizations not played recently
-* Weighted randomization based on player preferences - non-warmonger civilizations
-* Multiplayer-compatible leader selection - unique civilization for each player according to his/her preferences
-* Configurable multi-choice (the app offers the number of leaders to choose from)
-* Storing each player's final selection
+* Browse all **43 Vox Populi** civilizations from static JSON (`assets/data/civilizations.json`)
+* Expand list rows for leader, unique ability, units, buildings, and wonders
+* View warlike / science / culture / diplomatic scores (0–10 rated by AI according to the unique features)
+* Open a full-detail modal per civilization
+* Jump to match history filtered by civilization
 
 
-## Match History & Statistics
+## Civilization selection (implemented)
 
-* win/loss results,
-* victory conditions,
-* civilization used,
-* game score,
-* map type,
-* difficulty,
-* turn count,
-* strongest civilizations encountered,
-* notable game events,
-* multiplayer participants,
-* and custom notes.
+* Create and manage named players (soft-delete supported in the database)
+* Build a **New Game** roster by selecting players
+* Random civilization assignment per player with **no duplicate civs** in the same session
+* Per-player selection preferences:
+  * exclude specific civilizations,
+  * optionally avoid recently played civs (configurable lookback window),
+  * with graceful fallback when the filtered pool is empty
+* Reroll a single player’s assignment
+* Hand-pick a civilization from the full list (respecting uniqueness within the session)
+* **Commit** a game to local storage (participants + civ/leader keys)
+
+
+## Match history (implemented)
+
+* List committed games with start/end dates and participants
+* Record and edit winners (human players or an AI civilization)
+* Delete games from history
+* Filter history by civilization (from the Library tab)
+
+
+## Leaderboard & statistics (implemented)
+
+* Top civilizations and top players by win count
+* Custom **game length** axis chart (days from start to end) when enough completed games exist
+
+
+## Planned / not yet in the UI
+
+The database schema and TypeScript types reserve fields for richer match metadata that is not wired up yet:
+
+* map type, difficulty, victory type, score, turn count, notes
+* weighted randomization (e.g. prefer less warlike civs)
+* offering multiple random choices per player
+* game events and “strongest civs encountered” tracking
+* cloud sync, accounts, and production analytics (e.g. Sentry)
 
 
 # Project Goals
 
 ## Primary Goals
 
-* Create a useful companion app for Civilization V players
+* Create a useful companion app for Civilization V (Vox Populi) players
 * Explore AI-assisted (“vibe coding”) development workflows
 
 
 # Technology Stack
 
-- App Framework
-    - React Native - A cross-platform framework for building native mobile apps using React and JavaScript/TypeScript. It allows you to share most code between iOS and Android while still rendering native UI components.
-    - Expo - A development platform and toolkit built around React Native. It simplifies setup, builds, updates, device APIs, and deployment, making mobile development faster and easier—especially for solo or small-team projects.
-    - TypeScript - A typed superset of JavaScript that improves code reliability, autocomplete, refactoring, and long-term maintainability. Particularly valuable as the app grows in complexity.
-- Local Database
-    - Expo SQLite - A lightweight embedded SQL database that runs directly on the device. Ideal for offline-first apps and storing structured game/session data locally without requiring a backend.
-    - Drizzle ORM - A modern TypeScript ORM with strong type safety and SQL-like schema definitions. It provides a clean developer experience while keeping database queries explicit and performant.
-- UI
-    - NativeWind - A Tailwind CSS-style utility framework for React Native. It enables fast, consistent styling using utility classes while keeping UI code concise and scalable.
-    - React Native Paper - A Material Design component library for React Native. It provides polished prebuilt components like buttons, dialogs, cards, menus, and forms with consistent theming support.
-- Navigation
-    - Expo Router - A file-based routing system for Expo and React Native inspired by Next.js. It simplifies navigation structure, deep linking, nested layouts, and screen organization.
-- State Management
-    - Zustand - A lightweight and minimal state management library for React. It avoids boilerplate while making global app state simple, fast, and scalable.
-- Charts & Statistics
-    - Victory Native XL - A charting library designed for React Native with strong support for customizable and animated data visualizations such as line charts, bar charts, and pie charts.
-    - or React Native Chart Kit - A simpler charting library focused on quick setup and common mobile chart types. Useful for lightweight dashboards and basic statistics screens.
-- Data Source for Civ V Content
-    - static JSON files
-- Authentication
-    - local-only app for now
-- Analytics (later)
-    - Sentry - An error tracking and performance monitoring platform. It helps detect crashes, log issues, and monitor app stability in production environments.
+| Area | Choice |
+| ---- | ------ |
+| App framework | React Native + Expo (~54) |
+| Language | TypeScript |
+| Routing | Expo Router (file-based, typed routes) |
+| Local database | Expo SQLite + Drizzle ORM (migrations via `drizzle-kit`) |
+| UI styling | NativeWind (Tailwind) + React Native Paper (Material) |
+| Fonts | Bodoni Moda (`@expo-google-fonts/bodoni-moda`) |
+| State | Zustand (minimal global state, e.g. database readiness) |
+| Civ V content | Static JSON (`assets/data/civilizations.json`) |
+| Charts | Custom React Native components (no third-party chart library) |
+| Auth / backend | None — local-only |
+| Patches | `patch-package` (React Navigation tab/element tweaks) |
 
 
 # Architecture Overview
 
-The application follows a modular, feature-oriented architecture.
+The application follows a modular, feature-oriented layout.
 
-## Key Principles
+## Key principles
 
-* Offline-first design
-* Strong TypeScript typing
-* Clear separation of concerns
-* Reusable UI components
-* Minimal global state
-* Scalable folder organization
-
-
-# Data Model Overview
-
-Planned core entities:
-
-* Civilization
-* Leader
-* Game
-* Player
-* MatchResult
-* GameEvent
-* VictoryType
-* MapType
-* Difficulty
-* UserPreferences
+* Offline-first: all game and player data lives in on-device SQLite
+* Strong TypeScript typing across services, schema, and UI
+* Business logic in `services/` and `utils/`, screens stay thin
+* Reusable UI under `components/` (civilization, game, player, stats, ui)
+* Minimal global state (`store/appStore.ts` tracks DB readiness only)
 
 
-# Project Structure
+# Data Model
 
-Example project structure:
+## Static content (`assets/data/civilizations.json`)
+
+* `CivilizationsDataset` with mod name, schema version, and `Civilization[]`
+* Each civilization: slug, leader, uniques, and four balance scores
+
+## SQLite tables (`database/schema.ts`)
+
+| Table | Purpose |
+| ----- | ------- |
+| `games` | One row per committed session; legacy single-civ columns plus winner metadata and optional match fields |
+| `game_players` | Many-to-many: which player played which civ/leader in a game |
+| `players` | Named participants (`deleted_at` for soft delete) |
+| `user_preferences` | Key/value store (e.g. per-player selection preferences as JSON) |
+
+Migrations live in `database/migrations/` and run at startup via `DatabaseProvider`.
+
+
+# App structure
+
+Four top tabs (`app/(tabs)/`):
+
+| Tab | Route | Role |
+| --- | ----- | ---- |
+| Library | `index` | Civilization reference list |
+| Select | `select` | New game setup, random picks, commit |
+| History | `history` | Committed games; optional `?civ=` filter |
+| Leaderboard | `stats` | Win leaderboards and game-length chart |
+
+
+# Project structure
 
 ```txt
-app/
+app/                    # Expo Router screens and layouts
+  (tabs)/               # Main tab screens
+  _layout.tsx           # Root stack, fonts, providers
 components/
-database/
-hooks/
-services/
-store/
-types/
-assets/data/
+  civilization/         # List items, details, scores, emblems
+  game/                 # Match edit modal
+  player/               # Selection preferences modal
+  providers/            # Theme, Paper, database bootstrap
+  stats/                # Game length chart
+  ui/                   # Screen, cards, headings, icons
+constants/              # Theme, colors, navigation theme
+database/               # Drizzle schema, client, migrations
+services/               # Civilization, game, player, preferences APIs
+store/                  # Zustand stores
+types/                  # Shared TypeScript types
+utils/                  # Selection logic, date helpers
+assets/data/            # civilizations.json
+assets/fonts/           # Space Mono (bundled)
 ```
 
-## Folder Responsibilities
 
-| Folder         | Purpose                      |
-| -------------- | ---------------------------- |
-| `app/`         | Screens and routing          |
-| `components/`  | Reusable UI components       |
-| `database/`    | Database schema and queries  |
-| `hooks/`       | Custom React hooks           |
-| `services/`    | Business logic and utilities |
-| `store/`       | Zustand state stores         |
-| `types/`       | Shared TypeScript types      |
-| `assets/data/` | Static Civilization V data   |
-
-
-# Development Setup
+# Development setup
 
 ## Requirements
 
 * Node.js (LTS)
 * npm
-* Expo CLI
-* Android Studio
-* Cursor
+* Expo Go (recommended) or a dev build (Android Studio / Xcode for emulators)
 * Git
 
-
-## Recommended Commands
-
-### Install dependencies
+## Install
 
 ```bash
 npm install
 ```
 
-### Start development server
+(`postinstall` runs `patch-package` automatically.)
+
+## Run
 
 ```bash
-npm start
+npm start          # Expo dev server
+npm run android    # Open on Android
+npm run ios        # Open on iOS
+npm run web        # Open in browser (SQLite uses async open on web)
 ```
 
-### Launch Android emulator
+## Database (schema changes)
+
+After editing `database/schema.ts`:
 
 ```bash
-npm run android
+npm run db:generate   # Generate a new Drizzle migration
+npm run db:studio     # Optional: Drizzle Studio
 ```
+
+Migrations are applied when the app starts.
 
 
 # License
@@ -177,4 +205,4 @@ TBD
 
 Civilization V and related assets are property of their respective owners.
 
-This project is an unofficial fan-made companion application and is not affiliated with or endorsed by Firaxis Games or 2K.
+This project is an unofficial fan-made companion application and is not affiliated with or endorsed by Firaxis Games, 2K, or Vox Populi mod authors.
