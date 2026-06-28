@@ -1,5 +1,6 @@
 import { useIsFocused } from '@react-navigation/native';
 import { Platform, View, type ViewProps } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 type ScreenProps = ViewProps & {
   className?: string;
@@ -13,9 +14,19 @@ export function Screen({ className, children, ...props }: ScreenProps) {
     return null;
   }
 
+  const screenClassName = `flex-1 bg-surface ${className ?? ''}`;
+
+  if (Platform.OS === 'web') {
+    return (
+      <View className={screenClassName} {...props}>
+        {children}
+      </View>
+    );
+  }
+
   return (
-    <View className={`flex-1 bg-surface ${className ?? ''}`} {...props}>
+    <SafeAreaView edges={['bottom']} className={screenClassName} {...props}>
       {children}
-    </View>
+    </SafeAreaView>
   );
 }
