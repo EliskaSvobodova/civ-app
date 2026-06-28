@@ -103,6 +103,13 @@ The application follows a modular, feature-oriented layout.
 * Minimal global state (`store/appStore.ts` tracks DB readiness only)
 
 
+## Data access
+
+* **`database/sqliteExecutor.ts`** — single entry point for async SQL via expo-sqlite `$client`
+* **`database/repositories/`** — `PlayerRepository`, `GameRepository`, `PreferencesRepository` (SQL + row mappers)
+* **`services/`** — validation, domain assembly, and civilization enrichment; no direct SQL
+
+
 # Data Model
 
 ## Static content (`assets/data/civilizations.json`)
@@ -149,6 +156,8 @@ components/
   ui/                   # Screen, cards, headings, icons
 constants/              # Theme, colors, navigation theme
 database/               # Drizzle schema, client, migrations
+  repositories/         # Player, game, preferences data access
+  sqliteExecutor.ts     # Async SQL wrapper for all platforms
 services/               # Civilization, game, player, preferences APIs
 store/                  # Zustand stores
 types/                  # Shared TypeScript types
