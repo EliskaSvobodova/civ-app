@@ -205,6 +205,28 @@ npm run db:studio     # Optional: Drizzle Studio
 Migrations are applied when the app starts.
 
 
+# Android APK (preview build)
+
+Standalone APKs are produced with **EAS Build**, not `expo start` / Expo Go. The `preview` profile in `eas.json` builds an internally distributed `.apk`.
+
+## One-time setup
+
+* Expo account
+* EAS CLI (`npm install -g eas-cli`, then `eas login`)
+
+The Android application id is already set (`com.elizabetas.civapp`). Let EAS generate and store the keystore on the first build.
+
+## Cloud build (installable APK)
+
+```bash
+npx expo-doctor
+npx expo install --check
+eas build --platform android --profile preview
+```
+
+When the build finishes, download the `.apk` from the Expo dashboard (or the install URL EAS prints). On the phone, allow installs from unknown sources, then install the file.
+
+
 # License
 
 TBD
