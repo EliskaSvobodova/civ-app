@@ -43,7 +43,7 @@ Rejected alternatives:
 2. Update `app.json` for SDK 55+ config rules.
 3. Migrate app imports off `@react-navigation/*` to Expo Router entry points (SDK 56).
 4. Remove or replace obsolete `patch-package` patches for `@react-navigation/*`.
-5. Verify with `expo-doctor`, Expo Go, and a fresh preview APK.
+5. Verify with `expo-doctor` and Expo Go. **Do not run an EAS preview build unless the user explicitly asks** (limited free build quota).
 6. Light README notes if install/run docs mention SDK 54–specific guidance.
 
 ### Out of scope
@@ -51,6 +51,7 @@ Rejected alternatives:
 - Introducing `expo-dev-client` / changing the EAS `development` workflow beyond what the upgrade requires.
 - Feature work, schema/migration changes, or UI refactors.
 - iOS store submission.
+- Running `eas build` (any profile) without explicit user approval.
 
 ## Migration checklist
 
@@ -87,13 +88,18 @@ Database layer (`database/client.ts`, drizzle + `openDatabaseSync` / `openDataba
 
 - Managed workflow: no checked-in `android/` / `ios/` trees expected; EAS regenerates natives.
 - Keep existing `eas.json` `preview` profile (`distribution: internal`, Android `buildType: apk`).
-- After dependency upgrade, produce a **new** preview build (old SDK 54 APKs are not valid for verifying this change).
+- A **new** preview APK is required to fully prove production parity after the upgrade (old SDK 54 APKs do not count), but **do not start that build during implementation** unless the user explicitly requests it — free EAS preview quota is limited.
 
 ## Verification
+
+**Default (implementation complete without spending a build):**
 
 1. `npx expo-doctor` — clean (or only documented, accepted warnings).
 2. `npm start` — project loads in **Expo Go SDK 57** on Android (no “incompatible SDK” error).
 3. Smoke: app boots, DB provider/migrations run, core navigation works.
+
+**Only when the user asks (consumes EAS quota):**
+
 4. `eas build --platform android --profile preview` — build succeeds; install APK; confirm launch without the historical `expo-sqlite` / `NativeDatabase` crash.
 
 ## Risks
@@ -109,4 +115,4 @@ Database layer (`database/client.ts`, drizzle + `openDatabaseSync` / `openDataba
 
 - One dependency tree on SDK 57.
 - Dev: Expo Go SDK 57 works with `npm start`.
-- Prod preview: new Android APK from `preview` profile launches and uses SQLite successfully.
+- Prod preview: **deferred** until the user explicitly requests an EAS build; then a new Android APK from `preview` must launch and use SQLite successfully.
