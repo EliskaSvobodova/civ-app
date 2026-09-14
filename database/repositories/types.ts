@@ -1,10 +1,12 @@
 import type { InferSelectModel } from 'drizzle-orm';
 
-import type { gamePlayers, games, players } from '@/database/schema';
+import type { eventTypes, gameEvents, gamePlayers, games, players } from '@/database/schema';
 
 export type Player = InferSelectModel<typeof players>;
 export type Game = InferSelectModel<typeof games>;
 export type GamePlayerRow = InferSelectModel<typeof gamePlayers>;
+export type EventTypeRow = InferSelectModel<typeof eventTypes>;
+export type GameEventRow = InferSelectModel<typeof gameEvents>;
 
 export type PlayerRow = {
   id: number;
@@ -95,4 +97,43 @@ export type InsertGameWithPlayersInput = {
     civilizationKey: string;
     leaderKey: string;
   }[];
+};
+
+export type EventTypeDbRow = {
+  id: number;
+  key: string;
+  label: string;
+  is_builtin: number;
+  created_at: string;
+};
+
+export type GameEventJoinedDbRow = {
+  id: number;
+  game_id: number;
+  round: number;
+  civilization_key: string;
+  target_key: string | null;
+  target_label: string | null;
+  created_at: string;
+  type_id: number;
+  type_key: string;
+  type_label: string;
+  type_is_builtin: number;
+};
+
+export type InsertGameEventInput = {
+  gameId: number;
+  eventTypeId: number;
+  round: number;
+  civilizationKey: string;
+  targetKey: string | null;
+  targetLabel: string | null;
+  createdAt: string;
+};
+
+export type InsertEventTypeInput = {
+  key: string;
+  label: string;
+  isBuiltin: boolean;
+  createdAt: string;
 };

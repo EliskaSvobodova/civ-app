@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "mod": "Vox Populi",
+  "description": "Vox Populi corporations.",
+  "corporations": [
+    {
+      "id": "CORPORATION_CENTAURUS_EXTRACTORS",
+      "name": "Centaurus Extractors, Inc.",
+      "headquartersBuildingClass": "BUILDINGCLASS_CENTAURUS_EXTRACTORS_HQ"
+    },
+    {
+      "id": "CORPORATION_CIVILIZED_JEWELERS",
+      "name": "Civilized Jewelers, Inc.",
+      "headquartersBuildingClass": "BUILDINGCLASS_CIVILIZED_JEWELERS_HQ"
+    },
+    {
+      "id": "CORPORATION_FIRAXITE_MATERIALS",
+      "name": "Firaxite Materials, Inc.",
+      "headquartersBuildingClass": "BUILDINGCLASS_FIRAXITE_MATERIALS_HQ"
+    },
+    {
+      "id": "CORPORATION_GIORGIO_ARMEIER",
+      "name": "Giorgio Armeier, Inc.",
+      "headquartersBuildingClass": "BUILDINGCLASS_GIORGIO_ARMEIER_HQ"
+    },
+    {
+      "id": "CORPORATION_HEXXON_REFINERY",
+      "name": "Hexxon Refinery, Inc.",
+      "headquartersBuildingClass": "BUILDINGCLASS_HEXXON_REFINERY_HQ"
+    },
+    {
+      "id": "CORPORATION_POPULI_MEDICINE",
+      "name": "Populi Medicine, Inc.",
+      "headquartersBuildingClass": "BUILDINGCLASS_POPULI_MEDICINE_HQ"
+    },
+    {
+      "id": "CORPORATION_TRADER_SIDS",
+      "name": "Trader Sid's, Inc.",
+      "headquartersBuildingClass": "BUILDINGCLASS_TRADER_SIDS_HQ"
+    },
+    {
+      "id": "CORPORATION_TWOKAY_FOODS",
+      "name": "TwoKay Foods, Inc.",
+      "headquartersBuildingClass": "BUILDINGCLASS_TWOKAY_FOODS_HQ"
+    }
+  ]
+}

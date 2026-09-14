@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "mod": "Vox Populi",
+  "description": "Foundable religions from BNW (pantheon sentinel excluded).",
+  "religions": [
+    {
+      "id": "RELIGION_BUDDHISM",
+      "name": "Buddhism"
+    },
+    {
+      "id": "RELIGION_CHRISTIANITY",
+      "name": "Catholicism"
+    },
+    {
+      "id": "RELIGION_CONFUCIANISM",
+      "name": "Confucianism"
+    },
+    {
+      "id": "RELIGION_ORTHODOXY",
+      "name": "Eastern Orthodoxy"
+    },
+    {
+      "id": "RELIGION_HINDUISM",
+      "name": "Hinduism"
+    },
+    {
+      "id": "RELIGION_ISLAM",
+      "name": "Islam"
+    },
+    {
+      "id": "RELIGION_JUDAISM",
+      "name": "Judaism"
+    },
+    {
+      "id": "RELIGION_PROTESTANTISM",
+      "name": "Protestantism"
+    },
+    {
+      "id": "RELIGION_SHINTO",
+      "name": "Shinto"
+    },
+    {
+      "id": "RELIGION_SIKHISM",
+      "name": "Sikhism"
+    },
+    {
+      "id": "RELIGION_TAOISM",
+      "name": "Taoism"
+    },
+    {
+      "id": "RELIGION_TENGRIISM",
+      "name": "Tengriism"
+    },
+    {
+      "id": "RELIGION_ZOROASTRIANISM",
+      "name": "Zoroastrianism"
+    }
+  ]
+}

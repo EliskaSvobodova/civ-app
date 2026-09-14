@@ -1,0 +1,336 @@
+{
+  "schemaVersion": 1,
+  "mod": "Vox Populi",
+  "description": "World wonders (MaxGlobalInstances=1) from BNW + Vox Populi. Corporation HQs excluded.",
+  "worldWonders": [
+    {
+      "id": "BUILDING_ALHAMBRA",
+      "name": "Alhambra",
+      "prereqTech": "TECH_CHIVALRY"
+    },
+    {
+      "id": "BUILDING_ANGKOR_WAT",
+      "name": "Angkor Wat",
+      "prereqTech": "TECH_EDUCATION"
+    },
+    {
+      "id": "BUILDING_BIG_BEN",
+      "name": "Big Ben",
+      "prereqTech": "TECH_INDUSTRIALIZATION"
+    },
+    {
+      "id": "BUILDING_BLETCHLEY_PARK",
+      "name": "Bletchley Park",
+      "prereqTech": "TECH_COMPUTERS"
+    },
+    {
+      "id": "BUILDING_BOROBUDUR",
+      "name": "Borobudur",
+      "prereqTech": "TECH_THEOLOGY"
+    },
+    {
+      "id": "BUILDING_BRANDENBURG_GATE",
+      "name": "Brandenburg Gate",
+      "prereqTech": "TECH_MILITARY_SCIENCE"
+    },
+    {
+      "id": "BUILDING_BROADWAY",
+      "name": "Broadway",
+      "prereqTech": "TECH_RADIO"
+    },
+    {
+      "id": "BUILDING_CERN",
+      "name": "CERN",
+      "prereqTech": "TECH_PARTICLE_PHYSICS"
+    },
+    {
+      "id": "BUILDING_CN_TOWER",
+      "name": "CN Tower",
+      "prereqTech": "TECH_TELECOM"
+    },
+    {
+      "id": "BUILDING_COLOSSUS",
+      "name": "Colossus",
+      "prereqTech": "TECH_IRON_WORKING"
+    },
+    {
+      "id": "BUILDING_CRISTO_REDENTOR",
+      "name": "Cristo Redentor",
+      "prereqTech": "TECH_PLASTIC"
+    },
+    {
+      "id": "BUILDING_CRYSTAL_PALACE",
+      "name": "Crystal Palace",
+      "unlockedByLeague": true
+    },
+    {
+      "id": "BUILDING_EIFFEL_TOWER",
+      "name": "Eiffel Tower",
+      "prereqTech": "TECH_RADIO"
+    },
+    {
+      "id": "BUILDING_EMPIRE_STATE_BUILDING",
+      "name": "Empire State Building",
+      "prereqTech": "TECH_ELECTRICITY"
+    },
+    {
+      "id": "BUILDING_FORBIDDEN_PALACE",
+      "name": "Forbidden Palace",
+      "prereqTech": "TECH_BANKING"
+    },
+    {
+      "id": "BUILDING_GLOBE_THEATER",
+      "name": "Globe Theatre",
+      "prereqTech": "TECH_PRINTING_PRESS"
+    },
+    {
+      "id": "BUILDING_GRAND_CANAL",
+      "name": "Grand Canal",
+      "unlockedByLeague": true
+    },
+    {
+      "id": "BUILDING_GREAT_FIREWALL",
+      "name": "Great Firewall",
+      "prereqTech": "TECH_COMPUTERS"
+    },
+    {
+      "id": "BUILDING_GREAT_LIBRARY",
+      "name": "Great Library",
+      "prereqTech": "TECH_WRITING"
+    },
+    {
+      "id": "BUILDING_GREAT_LIGHTHOUSE",
+      "name": "Great Lighthouse",
+      "prereqTech": "TECH_OPTICS"
+    },
+    {
+      "id": "BUILDING_MOSQUE_OF_DJENNE",
+      "name": "Great Mosque of Djenne",
+      "prereqTech": "TECH_THEOLOGY"
+    },
+    {
+      "id": "BUILDING_GREAT_WALL",
+      "name": "Great Wall",
+      "prereqTech": "TECH_ENGINEERING"
+    },
+    {
+      "id": "BUILDING_HAGIA_SOPHIA",
+      "name": "Hagia Sophia",
+      "prereqTech": "TECH_THEOLOGY"
+    },
+    {
+      "id": "BUILDING_HANGING_GARDEN",
+      "name": "Hanging Gardens",
+      "prereqTech": "TECH_MATHEMATICS"
+    },
+    {
+      "id": "BUILDING_HIMEJI_CASTLE",
+      "name": "Himeji Castle",
+      "prereqTech": "TECH_GUNPOWDER"
+    },
+    {
+      "id": "BUILDING_HUBBLE",
+      "name": "Hubble Space Telescope",
+      "prereqTech": "TECH_SATELLITES"
+    },
+    {
+      "id": "BUILDING_CHICHEN_ITZA",
+      "name": "Chichen Itza",
+      "prereqTech": "TECH_CIVIL_SERVICE"
+    },
+    {
+      "id": "BUILDING_INTERNATIONAL_SPACE_STATION",
+      "name": "International Space Station",
+      "unlockedByLeague": true
+    },
+    {
+      "id": "BUILDING_KARLSTEJN",
+      "name": "Karlstejn",
+      "prereqTech": "TECH_GUILDS"
+    },
+    {
+      "id": "BUILDING_KREMLIN",
+      "name": "Kremlin",
+      "prereqTech": "TECH_RAILROAD"
+    },
+    {
+      "id": "BUILDING_LEANING_TOWER",
+      "name": "Leaning Tower of Pisa",
+      "prereqTech": "TECH_PRINTING_PRESS"
+    },
+    {
+      "id": "BUILDING_LOUVRE",
+      "name": "Louvre",
+      "prereqTech": "TECH_ARCHAEOLOGY"
+    },
+    {
+      "id": "BUILDING_MACHU_PICHU",
+      "name": "Machu Picchu",
+      "prereqTech": "TECH_GUILDS"
+    },
+    {
+      "id": "BUILDING_MAUSOLEUM_HALICARNASSUS",
+      "name": "Mausoleum Halicarnassus",
+      "prereqTech": "TECH_MASONRY"
+    },
+    {
+      "id": "BUILDING_MENIN_GATE",
+      "name": "Menin Gate",
+      "unlockedByLeague": true
+    },
+    {
+      "id": "BUILDING_NALANDA",
+      "name": "Nalanda",
+      "prereqTech": "TECH_DRAMA"
+    },
+    {
+      "id": "BUILDING_NEUSCHWANSTEIN",
+      "name": "Neuschwanstein",
+      "prereqTech": "TECH_RAILROAD"
+    },
+    {
+      "id": "BUILDING_NOTRE_DAME",
+      "name": "Notre Dame",
+      "prereqTech": "TECH_PHYSICS"
+    },
+    {
+      "id": "BUILDING_OLYMPIC_VILLAGE",
+      "name": "Olympic Village",
+      "unlockedByLeague": true
+    },
+    {
+      "id": "BUILDING_ORACLE",
+      "name": "Oracle",
+      "prereqTech": "TECH_PHILOSOPHY"
+    },
+    {
+      "id": "BUILDING_PARTHENON",
+      "name": "Parthenon",
+      "prereqTech": "TECH_DRAMA"
+    },
+    {
+      "id": "BUILDING_PENTAGON",
+      "name": "Pentagon",
+      "prereqTech": "TECH_COMBINED_ARMS"
+    },
+    {
+      "id": "BUILDING_PETRA",
+      "name": "Petra",
+      "prereqTech": "TECH_CURRENCY"
+    },
+    {
+      "id": "BUILDING_PORCELAIN_TOWER",
+      "name": "Porcelain Tower",
+      "prereqTech": "TECH_ARCHITECTURE"
+    },
+    {
+      "id": "BUILDING_PRORA_RESORT",
+      "name": "Prora",
+      "prereqTech": "TECH_FLIGHT"
+    },
+    {
+      "id": "BUILDING_PYRAMID",
+      "name": "Pyramids",
+      "prereqTech": "TECH_MASONRY"
+    },
+    {
+      "id": "BUILDING_RED_FORT",
+      "name": "Red Fort",
+      "prereqTech": "TECH_METALLURGY"
+    },
+    {
+      "id": "BUILDING_ROMAN_FORUM",
+      "name": "Roman Forum",
+      "prereqTech": "TECH_MATHEMATICS"
+    },
+    {
+      "id": "BUILDING_SISTINE_CHAPEL",
+      "name": "Sistine Chapel",
+      "prereqTech": "TECH_ACOUSTICS"
+    },
+    {
+      "id": "BUILDING_SLATER_MILL",
+      "name": "Slater Mill",
+      "prereqTech": "TECH_INDUSTRIALIZATION",
+      "civilizationRequired": "CIVILIZATION_AMERICA"
+    },
+    {
+      "id": "BUILDING_SMITHSONIAN_INSTITUTION",
+      "name": "Smithsonian Institution",
+      "prereqTech": "TECH_ARCHAEOLOGY",
+      "civilizationRequired": "CIVILIZATION_AMERICA"
+    },
+    {
+      "id": "BUILDING_SOHO_FOUNDRY",
+      "name": "Soho Foundry",
+      "prereqTech": "TECH_STEAM_POWER"
+    },
+    {
+      "id": "BUILDING_STATUE_OF_LIBERTY",
+      "name": "Statue of Liberty",
+      "prereqTech": "TECH_REPLACEABLE_PARTS"
+    },
+    {
+      "id": "BUILDING_STATUE_ZEUS",
+      "name": "Statue of Zeus",
+      "prereqTech": "TECH_BRONZE_WORKING"
+    },
+    {
+      "id": "BUILDING_STONEHENGE",
+      "name": "Stonehenge",
+      "prereqTech": "TECH_CALENDAR"
+    },
+    {
+      "id": "BUILDING_SUMMER_PALACE",
+      "name": "Summer Palace",
+      "prereqTech": "TECH_ACOUSTICS"
+    },
+    {
+      "id": "BUILDING_SYDNEY_OPERA_HOUSE",
+      "name": "Sydney Opera House",
+      "prereqTech": "TECH_ECOLOGY"
+    },
+    {
+      "id": "BUILDING_TAJ_MAHAL",
+      "name": "Taj Mahal",
+      "prereqTech": "TECH_ARCHITECTURE"
+    },
+    {
+      "id": "BUILDING_TEMPLE_ARTEMIS",
+      "name": "Temple Artemis",
+      "prereqTech": "TECH_ARCHERY"
+    },
+    {
+      "id": "BUILDING_TERRACOTTA_ARMY",
+      "name": "Terracotta Army",
+      "prereqTech": "TECH_CONSTRUCTION"
+    },
+    {
+      "id": "BUILDING_MOTHERLAND_CALLS",
+      "name": "The Motherland Calls",
+      "prereqTech": "TECH_ELECTRONICS"
+    },
+    {
+      "id": "BUILDING_UFFIZI",
+      "name": "Uffizi",
+      "prereqTech": "TECH_ARCHITECTURE"
+    },
+    {
+      "id": "BUILDING_UNITED_NATIONS",
+      "name": "United Nations",
+      "prereqTech": "TECH_GLOBALIZATION",
+      "unlockedByLeague": true
+    },
+    {
+      "id": "BUILDING_WEST_POINT",
+      "name": "West Point",
+      "prereqTech": "TECH_MILITARY_SCIENCE",
+      "civilizationRequired": "CIVILIZATION_AMERICA"
+    },
+    {
+      "id": "BUILDING_WORLD_TRADE_CENTER",
+      "name": "World Trade Center",
+      "prereqTech": "TECH_TELECOM"
+    }
+  ]
+}

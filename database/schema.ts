@@ -53,3 +53,26 @@ export const userPreferences = sqliteTable('user_preferences', {
   key: text('key').notNull().unique(),
   value: text('value').notNull(),
 });
+
+export const eventTypes = sqliteTable('event_types', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  key: text('key').notNull().unique(),
+  label: text('label').notNull(),
+  isBuiltin: integer('is_builtin', { mode: 'boolean' }).notNull(),
+  createdAt: text('created_at').notNull(),
+});
+
+export const gameEvents = sqliteTable('game_events', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  gameId: integer('game_id')
+    .notNull()
+    .references(() => games.id),
+  eventTypeId: integer('event_type_id')
+    .notNull()
+    .references(() => eventTypes.id),
+  round: integer('round').notNull(),
+  civilizationKey: text('civilization_key').notNull(),
+  targetKey: text('target_key'),
+  targetLabel: text('target_label'),
+  createdAt: text('created_at').notNull(),
+});

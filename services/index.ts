@@ -1,4 +1,11 @@
 export {
+  getCivilizationOptions,
+  getCorporations,
+  getReligions,
+  getWonderOptions,
+  getWorldWonders,
+} from './catalogService';
+export {
   getAllCivilizations,
   getCivilizationByKey,
   getCivilizationBySlug,
@@ -7,6 +14,13 @@ export {
   getLeaderKey,
   pickRandomCivilization,
 } from './civilizationService';
+export {
+  createCustomEventType,
+  createGameEvent,
+  deleteGameEvent,
+  listEventTypes,
+  listGameEvents,
+} from './gameEventService';
 export {
   createGame,
   deleteGame,

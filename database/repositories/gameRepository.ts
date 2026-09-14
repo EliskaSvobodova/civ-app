@@ -108,6 +108,7 @@ export class SqliteGameRepository implements GameRepository {
   }
 
   async deleteById(gameId: number): Promise<void> {
+    await this.executor.run(`DELETE FROM game_events WHERE game_id = ?`, [gameId]);
     await this.executor.run(`DELETE FROM game_players WHERE game_id = ?`, [gameId]);
     const result = await this.executor.run(`DELETE FROM games WHERE id = ?`, [gameId]);
     if (result.changes === 0) {
