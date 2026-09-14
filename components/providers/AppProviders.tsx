@@ -1,4 +1,4 @@
-import { ThemeProvider } from '@react-navigation/native';
+import { ThemeProvider } from 'expo-router/react-navigation';
 import type { PropsWithChildren } from 'react';
 import { PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';

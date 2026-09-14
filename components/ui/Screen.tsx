@@ -1,4 +1,4 @@
-import { useIsFocused } from '@react-navigation/native';
+import { useIsFocused } from 'expo-router/react-navigation';
 import { Platform, View, type ViewProps } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 

@@ -1,5 +1,5 @@
 import { router, Tabs } from 'expo-router';
-import { Platform } from 'react-native';
+import { type ColorValue, Platform } from 'react-native';
 
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { imperialColors, imperialFonts } from '@/constants/theme';
@@ -9,7 +9,7 @@ function TabBarIcon({
   color,
 }: {
   name: 'menu-book' | 'military-tech' | 'history' | 'leaderboard';
-  color: string;
+  color: ColorValue;
 }) {
   return <IconSymbol name={name} size={24} color={color} />;
 }
