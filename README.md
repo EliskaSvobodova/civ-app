@@ -229,7 +229,9 @@ When the build finishes, download the `.apk` from the Expo dashboard (or the ins
 
 # License
 
-TBD
+Original source code in this repository is licensed under the [MIT License](LICENSE).
+
+Civilization V names, rules, flavor text, and other game or Vox Populi content (including `assets/data/civilizations.json`) are **not** covered by that license. Those materials remain the property of their respective owners.
 
 
 # Disclaimer
