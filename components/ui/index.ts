@@ -4,3 +4,5 @@ export type { SymbolName } from './IconSymbol';
 export { ImperialCard } from './ImperialCard';
 export { ParchmentGrain } from './ParchmentGrain';
 export { Screen } from './Screen';
+export { SearchableSelectField } from './SearchableSelectField';
+export type { SelectOption } from './SearchableSelectField';

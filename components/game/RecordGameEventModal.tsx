@@ -1,15 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
-import {
-  Button,
-  Checkbox,
-  Dialog,
-  Divider,
-  Portal,
-  Text,
-  TextInput,
-} from 'react-native-paper';
+import { Button, Dialog, Divider, Portal, Text, TextInput } from 'react-native-paper';
 
+import { SearchableSelectField } from '@/components/ui/SearchableSelectField';
 import {
   createCustomEventType,
   createGameEvent,
@@ -58,8 +51,6 @@ export function RecordGameEventModal({
   const [customTypeLabel, setCustomTypeLabel] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [civFilter, setCivFilter] = useState('');
-  const [targetFilter, setTargetFilter] = useState('');
 
   const civilizationOptions = useMemo(() => getCivilizationOptions(), []);
   const wonderOptions = useMemo(() => getWonderOptions(), []);
@@ -72,19 +63,16 @@ export function RecordGameEventModal({
     [],
   );
 
+  const eventTypeOptions = useMemo(
+    () => eventTypes.map((type) => ({ id: String(type.id), name: type.label })),
+    [eventTypes],
+  );
+
   const selectedType = useMemo(
     () => eventTypes.find((type) => type.id === selectedTypeId) ?? null,
     [eventTypes, selectedTypeId],
   );
   const targetMode = targetModeForType(selectedType);
-
-  const filteredCivs = useMemo(() => {
-    const query = civFilter.trim().toLowerCase();
-    if (!query) return civilizationOptions;
-    return civilizationOptions.filter((option) =>
-      option.name.toLowerCase().includes(query),
-    );
-  }, [civFilter, civilizationOptions]);
 
   const targetOptions: CatalogOption[] = useMemo(() => {
     switch (targetMode) {
@@ -106,12 +94,6 @@ export function RecordGameEventModal({
     corporationOptions,
     civilizationOptions,
   ]);
-
-  const filteredTargets = useMemo(() => {
-    const query = targetFilter.trim().toLowerCase();
-    if (!query) return targetOptions;
-    return targetOptions.filter((option) => option.name.toLowerCase().includes(query));
-  }, [targetFilter, targetOptions]);
 
   useEffect(() => {
     if (!visible || !entry) {
@@ -141,8 +123,6 @@ export function RecordGameEventModal({
     setCreatingCustomType(false);
     setCustomTypeLabel('');
     setSaveError(null);
-    setCivFilter('');
-    setTargetFilter('');
 
     return () => {
       cancelled = true;
@@ -153,7 +133,6 @@ export function RecordGameEventModal({
     setTargetKey(null);
     setCustomTargetLabel('');
     setReligionCustomName('');
-    setTargetFilter('');
   }, [selectedTypeId]);
 
   const handleCreateCustomType = async () => {
@@ -253,7 +232,8 @@ export function RecordGameEventModal({
     return null;
   }
 
-  const targetRequired = targetMode === 'wonder' ||
+  const targetRequired =
+    targetMode === 'wonder' ||
     targetMode === 'religion' ||
     targetMode === 'corporation' ||
     targetMode === 'civ';
@@ -265,49 +245,44 @@ export function RecordGameEventModal({
         <Dialog.ScrollArea style={{ paddingHorizontal: 0 }}>
           <ScrollView keyboardShouldPersistTaps="handled">
             <View className="gap-4 px-6 py-2">
-              <View className="gap-2">
-                <Text variant="labelMedium" className="uppercase tracking-wide text-primary">
-                  Event type
-                </Text>
-                {eventTypes.map((type, index) => (
-                  <View key={type.id}>
-                    {index > 0 ? <Divider className="bg-outline" /> : null}
-                    <Checkbox.Item
-                      label={type.label}
-                      status={selectedTypeId === type.id ? 'checked' : 'unchecked'}
-                      onPress={() => {
-                        setCreatingCustomType(false);
-                        setSelectedTypeId(type.id);
-                      }}
-                    />
-                  </View>
-                ))}
-                <Button
-                  mode="text"
-                  className="self-start"
-                  onPress={() => setCreatingCustomType((current) => !current)}
-                  disabled={isSaving}>
-                  {creatingCustomType ? 'Cancel custom type' : 'Create custom type…'}
-                </Button>
-                {creatingCustomType ? (
-                  <View className="gap-2">
-                    <TextInput
-                      label="Custom type label"
-                      value={customTypeLabel}
-                      onChangeText={setCustomTypeLabel}
-                      mode="outlined"
-                      disabled={isSaving}
-                    />
-                    <Button
-                      mode="outlined"
-                      onPress={handleCreateCustomType}
-                      loading={isSaving}
-                      disabled={isSaving || !customTypeLabel.trim()}>
-                      Save type
-                    </Button>
-                  </View>
-                ) : null}
-              </View>
+              <SearchableSelectField
+                label="Event type"
+                value={selectedTypeId != null ? String(selectedTypeId) : null}
+                options={eventTypeOptions}
+                placeholder="Select event type"
+                disabled={isSaving}
+                searchable={eventTypeOptions.length > 8}
+                onChange={(id) => {
+                  setCreatingCustomType(false);
+                  setSelectedTypeId(Number(id));
+                }}
+              />
+
+              <Button
+                mode="text"
+                className="self-start"
+                onPress={() => setCreatingCustomType((current) => !current)}
+                disabled={isSaving}>
+                {creatingCustomType ? 'Cancel custom type' : 'Create custom type…'}
+              </Button>
+              {creatingCustomType ? (
+                <View className="gap-2">
+                  <TextInput
+                    label="Custom type label"
+                    value={customTypeLabel}
+                    onChangeText={setCustomTypeLabel}
+                    mode="outlined"
+                    disabled={isSaving}
+                  />
+                  <Button
+                    mode="outlined"
+                    onPress={handleCreateCustomType}
+                    loading={isSaving}
+                    disabled={isSaving || !customTypeLabel.trim()}>
+                    Save type
+                  </Button>
+                </View>
+              ) : null}
 
               <Divider className="bg-outline" />
 
@@ -320,35 +295,18 @@ export function RecordGameEventModal({
                 disabled={isSaving}
               />
 
-              <View className="gap-2">
-                <Text variant="labelMedium" className="uppercase tracking-wide text-primary">
-                  Civilization
-                </Text>
-                <TextInput
-                  label="Filter civilizations"
-                  value={civFilter}
-                  onChangeText={setCivFilter}
-                  mode="outlined"
-                  disabled={isSaving}
-                />
-                {filteredCivs.map((option, index) => (
-                  <View key={option.id}>
-                    {index > 0 ? <Divider className="bg-outline" /> : null}
-                    <Checkbox.Item
-                      label={option.name}
-                      status={civilizationKey === option.id ? 'checked' : 'unchecked'}
-                      onPress={() => setCivilizationKey(option.id)}
-                    />
-                  </View>
-                ))}
-              </View>
+              <SearchableSelectField
+                label="Civilization"
+                value={civilizationKey}
+                options={civilizationOptions}
+                placeholder="Select civilization"
+                disabled={isSaving}
+                onChange={setCivilizationKey}
+              />
 
               {targetMode !== 'none' ? (
                 <>
                   <Divider className="bg-outline" />
-                  <Text variant="labelMedium" className="uppercase tracking-wide text-primary">
-                    Target
-                  </Text>
                   {targetMode === 'custom' ? (
                     <TextInput
                       label="Target (optional)"
@@ -359,23 +317,15 @@ export function RecordGameEventModal({
                     />
                   ) : (
                     <View className="gap-2">
-                      <TextInput
-                        label="Filter targets"
-                        value={targetFilter}
-                        onChangeText={setTargetFilter}
-                        mode="outlined"
+                      <SearchableSelectField
+                        label="Target"
+                        value={targetKey}
+                        options={targetOptions}
+                        placeholder="Select target"
                         disabled={isSaving}
+                        searchable={targetOptions.length > 8}
+                        onChange={setTargetKey}
                       />
-                      {filteredTargets.map((option, index) => (
-                        <View key={option.id}>
-                          {index > 0 ? <Divider className="bg-outline" /> : null}
-                          <Checkbox.Item
-                            label={option.name}
-                            status={targetKey === option.id ? 'checked' : 'unchecked'}
-                            onPress={() => setTargetKey(option.id)}
-                          />
-                        </View>
-                      ))}
                       {targetMode === 'religion' ? (
                         <TextInput
                           label="Custom religion name (optional)"
