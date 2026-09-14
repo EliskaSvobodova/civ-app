@@ -33,7 +33,7 @@ Rejected alternatives:
 | Native modules | All Expo packages aligned via `npx expo install --fix` |
 | `expo-sqlite` | SDK 57–bundled major (unified scheme ≈ `~57.x`), never a foreign major |
 | Dev | `npm start` opens in Expo Go SDK 57 |
-| Preview | `eas build --platform android --profile preview` produces a working APK (DB opens) |
+| Preview | Compatible with `preview` profile; **EAS build only on explicit user request** (limited quota) |
 
 ## Scope
 
