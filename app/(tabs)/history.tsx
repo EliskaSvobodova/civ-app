@@ -3,7 +3,9 @@ import { useCallback, useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { Button, Dialog, Divider, IconButton, Portal, Text } from 'react-native-paper';
 
+import { MatchEventsModal } from '@/components/game/MatchEventsModal';
 import { MatchWinnerEditModal } from '@/components/game/MatchWinnerEditModal';
+import { RecordGameEventModal } from '@/components/game/RecordGameEventModal';
 import { Heading } from '@/components/ui/Heading';
 import { ImperialCard } from '@/components/ui/ImperialCard';
 import { Screen } from '@/components/ui/Screen';
@@ -29,6 +31,8 @@ export default function HistoryScreen() {
   const { civ } = useLocalSearchParams<{ civ?: string }>();
   const [entries, setEntries] = useState<GameHistoryEntry[]>([]);
   const [editingEntry, setEditingEntry] = useState<GameHistoryEntry | null>(null);
+  const [recordingEntry, setRecordingEntry] = useState<GameHistoryEntry | null>(null);
+  const [eventsEntry, setEventsEntry] = useState<GameHistoryEntry | null>(null);
   const [entryToRemove, setEntryToRemove] = useState<GameHistoryEntry | null>(null);
   const [isRemoving, setIsRemoving] = useState(false);
 
@@ -67,6 +71,12 @@ export default function HistoryScreen() {
       await deleteGame(entryToRemove.id);
       if (editingEntry?.id === entryToRemove.id) {
         setEditingEntry(null);
+      }
+      if (recordingEntry?.id === entryToRemove.id) {
+        setRecordingEntry(null);
+      }
+      if (eventsEntry?.id === entryToRemove.id) {
+        setEventsEntry(null);
       }
       setEntryToRemove(null);
       await loadHistory();
@@ -122,7 +132,19 @@ export default function HistoryScreen() {
                         </View>
                       ) : null}
                     </View>
-                    <View className="flex-row">
+                    <View className="flex-row flex-wrap justify-end">
+                      <IconButton
+                        icon="calendar-plus"
+                        size={20}
+                        onPress={() => setRecordingEntry(entry)}
+                        accessibilityLabel="Record event"
+                      />
+                      <IconButton
+                        icon="timeline-text"
+                        size={20}
+                        onPress={() => setEventsEntry(entry)}
+                        accessibilityLabel="View events"
+                      />
                       <IconButton
                         icon="pencil"
                         size={20}
@@ -151,7 +173,8 @@ export default function HistoryScreen() {
                   ) : null}
                   <Divider className="my-3 bg-outline" />
                   {entry.participants.map((participant, participantIndex) => (
-                    <View key={`${entry.id}-${participant.playerName}-${participant.civilizationKey}`}>
+                    <View
+                      key={`${entry.id}-${participant.playerName}-${participant.civilizationKey}`}>
                       {participantIndex > 0 ? (
                         <Divider className="my-2 bg-outline" />
                       ) : null}
@@ -179,6 +202,16 @@ export default function HistoryScreen() {
         visible={editingEntry != null}
         onDismiss={() => setEditingEntry(null)}
         onSave={handleSaveMatch}
+      />
+      <RecordGameEventModal
+        entry={recordingEntry}
+        visible={recordingEntry != null}
+        onDismiss={() => setRecordingEntry(null)}
+      />
+      <MatchEventsModal
+        entry={eventsEntry}
+        visible={eventsEntry != null}
+        onDismiss={() => setEventsEntry(null)}
       />
       <Portal>
         <Dialog

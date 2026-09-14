@@ -1,5 +1,6 @@
 import { createSqliteExecutor, type SqliteExecutor } from '@/database/sqliteExecutor';
 
+import { SqliteGameEventRepository, type GameEventRepository } from './gameEventRepository';
 import { SqliteGameRepository, type GameRepository } from './gameRepository';
 import { SqlitePlayerRepository, type PlayerRepository } from './playerRepository';
 import {
@@ -11,6 +12,7 @@ export type Repositories = {
   players: PlayerRepository;
   games: GameRepository;
   preferences: PreferencesRepository;
+  gameEvents: GameEventRepository;
 };
 
 export function createRepositories(executor: SqliteExecutor): Repositories {
@@ -19,6 +21,7 @@ export function createRepositories(executor: SqliteExecutor): Repositories {
     players,
     games: new SqliteGameRepository(executor),
     preferences: new SqlitePreferencesRepository(executor),
+    gameEvents: new SqliteGameEventRepository(executor),
   };
 }
 
@@ -35,12 +38,17 @@ export function resetRepositories(): void {
   cached = null;
 }
 
+export type { GameEventRepository } from './gameEventRepository';
 export type { GameRepository } from './gameRepository';
 export type { PlayerRepository } from './playerRepository';
 export type { PreferencesRepository } from './preferencesRepository';
 export type {
+  EventTypeDbRow,
+  EventTypeRow,
   Game,
   GameDateRow,
+  GameEventJoinedDbRow,
+  GameEventRow,
   GameHistoryRow,
   GameMatchUpdateFields,
   GamePlayerCivRow,
@@ -49,6 +57,8 @@ export type {
   GameRow,
   GameWinnerFields,
   GameWinnerRow,
+  InsertEventTypeInput,
+  InsertGameEventInput,
   InsertGameWithPlayersInput,
   Player,
   PlayerRow,

@@ -44,7 +44,9 @@ The project is intentionally designed as:
 
 * List committed games with start/end dates and participants
 * Record and edit winners (human players or an AI civilization)
-* Delete games from history
+* Record match events (wonder built, religion founded/enhanced/reformed, corporation founded, civ destroyed/revived, plus custom types)
+* Browse and delete events for a match from a dedicated modal
+* Delete games from history (also deletes their events)
 * Filter history by civilization (from the Library tab)
 
 
@@ -61,7 +63,7 @@ The database schema and TypeScript types reserve fields for richer match metadat
 * map type, difficulty, victory type, score, turn count, notes
 * weighted randomization (e.g. prefer less warlike civs)
 * offering multiple random choices per player
-* game events and “strongest civs encountered” tracking
+* “strongest civs encountered” tracking
 * cloud sync, accounts, and production analytics (e.g. Sentry)
 
 
@@ -84,7 +86,7 @@ The database schema and TypeScript types reserve fields for richer match metadat
 | UI styling | NativeWind (Tailwind) + React Native Paper (Material) |
 | Fonts | Bodoni Moda (`@expo-google-fonts/bodoni-moda`) |
 | State | Zustand (minimal global state, e.g. database readiness) |
-| Civ V content | Static JSON (`assets/data/civilizations.json`) |
+| Civ V content | Static JSON (`assets/data/civilizations.json`, `worldWonders.json`, `religions.json`, `corporations.json`) |
 | Charts | Custom React Native components (no third-party chart library) |
 | Auth / backend | None — local-only |
 | Patches | none |
@@ -106,16 +108,20 @@ The application follows a modular, feature-oriented layout.
 ## Data access
 
 * **`database/sqliteExecutor.ts`** — single entry point for async SQL via expo-sqlite `$client`
-* **`database/repositories/`** — `PlayerRepository`, `GameRepository`, `PreferencesRepository` (SQL + row mappers)
+* **`database/repositories/`** — `PlayerRepository`, `GameRepository`, `GameEventRepository`, `PreferencesRepository` (SQL + row mappers)
 * **`services/`** — validation, domain assembly, and civilization enrichment; no direct SQL
 
 
 # Data Model
 
-## Static content (`assets/data/civilizations.json`)
+## Static content (`assets/data/`)
 
-* `CivilizationsDataset` with mod name, schema version, and `Civilization[]`
-* Each civilization: slug, leader, uniques, and four balance scores
+* `civilizations.json` — `CivilizationsDataset` with mod name, schema version, and `Civilization[]` (slug, leader, uniques, balance scores)
+* `worldWonders.json` — BNW + Vox Populi world wonders (corporation HQs excluded)
+* `religions.json` — foundable BNW religions
+* `corporations.json` — Vox Populi corporations
+
+Regenerate catalogs (dev machine with Civ V + Community-Patch-DLL): `node scripts/extract-vp-catalogs.mjs`
 
 ## SQLite tables (`database/schema.ts`)
 
@@ -125,6 +131,8 @@ The application follows a modular, feature-oriented layout.
 | `game_players` | Many-to-many: which player played which civ/leader in a game |
 | `players` | Named participants (`deleted_at` for soft delete) |
 | `user_preferences` | Key/value store (e.g. per-player selection preferences as JSON) |
+| `event_types` | Built-in and user-created reusable game event types |
+| `game_events` | Per-match events (type, round, civilization, optional target) |
 
 Migrations live in `database/migrations/` and run at startup via `DatabaseProvider`.
 
@@ -149,20 +157,21 @@ app/                    # Expo Router screens and layouts
   _layout.tsx           # Root stack, fonts, providers
 components/
   civilization/         # List items, details, scores, emblems
-  game/                 # Match edit modal
+  game/                 # Match edit / record event / events list modals
   player/               # Selection preferences modal
   providers/            # Theme, Paper, database bootstrap
   stats/                # Game length chart
   ui/                   # Screen, cards, headings, icons
 constants/              # Theme, colors, navigation theme
 database/               # Drizzle schema, client, migrations
-  repositories/         # Player, game, preferences data access
+  repositories/         # Player, game, game event, preferences data access
   sqliteExecutor.ts     # Async SQL wrapper for all platforms
-services/               # Civilization, game, player, preferences APIs
+services/               # Civilization, catalog, game, game event, player, preferences APIs
 store/                  # Zustand stores
 types/                  # Shared TypeScript types
 utils/                  # Selection logic, date helpers
-assets/data/            # civilizations.json
+assets/data/            # civilizations, worldWonders, religions, corporations JSON
+scripts/                # extract-vp-catalogs.mjs
 assets/fonts/           # Space Mono (bundled)
 ```
 

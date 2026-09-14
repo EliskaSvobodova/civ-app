@@ -3,6 +3,7 @@ export {
   createRepositories,
   getRepositories,
   resetRepositories,
+  type GameEventRepository,
   type GameRepository,
   type PlayerRepository,
   type PreferencesRepository,
