@@ -17,11 +17,14 @@ import type {
 
 export interface GameRepository {
   findHistoryJoinRows(): Promise<GameHistoryRow[]>;
+  findAllGameRows(): Promise<GameRow[]>;
+  findGamePlayersForGames(gameIds: number[]): Promise<GamePlayerDbRow[]>;
   findRecentCivilizationSlugs(playerId: number, limit: number): Promise<string[]>;
   updateWinner(gameId: number, fields: GameWinnerFields): Promise<void>;
   updateStartedAt(gameId: number, startedAt: string): Promise<void>;
   updateMatch(gameId: number, fields: GameMatchUpdateFields): Promise<void>;
   deleteById(gameId: number): Promise<void>;
+  deleteAllHistory(): Promise<void>;
   insertGameWithPlayers(
     input: InsertGameWithPlayersInput,
   ): Promise<{ game: Game; gamePlayers: GamePlayerRow[] }>;
@@ -42,6 +45,31 @@ export class SqliteGameRepository implements GameRepository {
        INNER JOIN game_players gp ON gp.game_id = g.id
        INNER JOIN players p ON p.id = gp.player_id
        ORDER BY g.played_at DESC, p.name ASC`,
+    );
+  }
+
+  async findAllGameRows(): Promise<GameRow[]> {
+    return this.executor.getAll<GameRow>(
+      `SELECT id, civilization_key, leader_key, map_type, difficulty, victory_type,
+              score, turn_count, won, winner_kind, winner_player_ids,
+              winner_civilization_key, winner_leader_key, notes, played_at, ended_at, created_at
+       FROM games
+       ORDER BY played_at ASC, id ASC`,
+    );
+  }
+
+  async findGamePlayersForGames(gameIds: number[]): Promise<GamePlayerDbRow[]> {
+    if (gameIds.length === 0) {
+      return [];
+    }
+
+    const placeholders = gameIds.map(() => '?').join(', ');
+    return this.executor.getAll<GamePlayerDbRow>(
+      `SELECT id, game_id, player_id, civilization_key, leader_key
+       FROM game_players
+       WHERE game_id IN (${placeholders})
+       ORDER BY game_id ASC, id ASC`,
+      gameIds,
     );
   }
 
@@ -116,13 +144,40 @@ export class SqliteGameRepository implements GameRepository {
     }
   }
 
+  async deleteAllHistory(): Promise<void> {
+    await this.executor.run(`DELETE FROM game_events`);
+    await this.executor.run(`DELETE FROM game_players`);
+    await this.executor.run(`DELETE FROM games`);
+  }
+
   async insertGameWithPlayers(
     input: InsertGameWithPlayersInput,
   ): Promise<{ game: Game; gamePlayers: GamePlayerRow[] }> {
     const gameResult = await this.executor.run(
-      `INSERT INTO games (civilization_key, leader_key, played_at, ended_at, created_at)
-       VALUES (?, ?, ?, ?, ?)`,
-      [input.civilizationKey, input.leaderKey, input.playedAt, null, input.createdAt],
+      `INSERT INTO games (
+         civilization_key, leader_key, map_type, difficulty, victory_type,
+         score, turn_count, won, winner_kind, winner_player_ids,
+         winner_civilization_key, winner_leader_key, notes,
+         played_at, ended_at, created_at
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        input.civilizationKey,
+        input.leaderKey,
+        input.mapType ?? null,
+        input.difficulty ?? null,
+        input.victoryType ?? null,
+        input.score ?? null,
+        input.turnCount ?? null,
+        input.won == null ? null : input.won ? 1 : 0,
+        input.winnerKind ?? null,
+        input.winnerPlayerIds ?? null,
+        input.winnerCivilizationKey ?? null,
+        input.winnerLeaderKey ?? null,
+        input.notes ?? null,
+        input.playedAt,
+        input.endedAt ?? null,
+        input.createdAt,
+      ],
     );
     const gameId = gameResult.lastInsertRowId;
 

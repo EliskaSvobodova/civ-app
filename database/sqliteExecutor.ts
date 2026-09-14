@@ -12,6 +12,7 @@ export interface SqliteExecutor {
   getAll<T>(sql: string, params?: readonly SQLiteBindValue[]): Promise<T[]>;
   getFirst<T>(sql: string, params?: readonly SQLiteBindValue[]): Promise<T | undefined>;
   run(sql: string, params?: readonly SQLiteBindValue[]): Promise<SqlRunResult>;
+  withTransaction<T>(fn: () => Promise<T>): Promise<T>;
 }
 
 export function createSqliteExecutor(db: AppDatabase = getDatabase()): SqliteExecutor {
@@ -29,6 +30,22 @@ export function createSqliteExecutor(db: AppDatabase = getDatabase()): SqliteExe
 
     run(sql: string, params: readonly SQLiteBindValue[] = []): Promise<SqlRunResult> {
       return client.runAsync(sql, ...params);
+    },
+
+    async withTransaction<T>(fn: () => Promise<T>): Promise<T> {
+      await client.execAsync('BEGIN IMMEDIATE');
+      try {
+        const result = await fn();
+        await client.execAsync('COMMIT');
+        return result;
+      } catch (error) {
+        try {
+          await client.execAsync('ROLLBACK');
+        } catch {
+          // Ignore rollback failures after a failed transaction.
+        }
+        throw error;
+      }
     },
   };
 }

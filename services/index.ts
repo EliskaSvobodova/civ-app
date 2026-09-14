@@ -44,6 +44,11 @@ export {
   type UpdateGameWinnerInput,
 } from './gameService';
 export {
+  exportHistoryDocument,
+  importHistory,
+  validateHistoryDocument,
+} from './historyTransferService';
+export {
   getPlayerSelectionPreferences,
   savePlayerSelectionPreferences,
 } from './playerPreferencesService';
