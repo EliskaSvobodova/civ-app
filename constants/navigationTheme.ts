@@ -1,4 +1,4 @@
-import { DefaultTheme, type Theme } from "expo-router/react-navigation";
+import { DefaultTheme, type Theme } from 'expo-router/react-navigation';
 
 import { imperialColors, imperialFonts } from './theme';
 

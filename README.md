@@ -78,7 +78,7 @@ The database schema and TypeScript types reserve fields for richer match metadat
 | Area | Choice |
 | ---- | ------ |
 | App framework | React Native + Expo (~57) |
-| Language | TypeScript |
+| Language | TypeScript (~6) |
 | Routing | Expo Router (file-based, typed routes) |
 | Local database | Expo SQLite + Drizzle ORM (migrations via `drizzle-kit`) |
 | UI styling | NativeWind (Tailwind) + React Native Paper (Material) |
@@ -188,7 +188,7 @@ npm install
 npm start          # Expo dev server
 npm run android    # Open on Android
 npm run ios        # Open on iOS
-npm run web        # Open in browser (SQLite uses async open on web)
+npm run web        # Open in browser (currently broken: expo-sqlite worker chunk missing; use Android Expo Go)
 ```
 
 ## Database (schema changes)

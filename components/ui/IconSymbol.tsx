@@ -1,5 +1,6 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import type { ComponentProps } from 'react';
+import type { ColorValue } from 'react-native';
 
 type MaterialIconName = ComponentProps<typeof MaterialIcons>['name'];
 
@@ -19,7 +20,7 @@ export type SymbolName = Extract<
 type IconSymbolProps = {
   name: SymbolName;
   size?: number;
-  color: string;
+  color: ColorValue;
 };
 
 export function IconSymbol({ name, size = 24, color }: IconSymbolProps) {
