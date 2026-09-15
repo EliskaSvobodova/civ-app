@@ -89,6 +89,7 @@ The database schema and TypeScript types reserve fields for richer match metadat
 | Civ V content | Static JSON (`assets/data/civilizations.json`, `worldWonders.json`, `religions.json`, `corporations.json`) |
 | Charts | Custom React Native components (no third-party chart library) |
 | Auth / backend | None — local-only |
+| Unit tests | Vitest (`npm test`) for domain logic in `utils/` and catalog JSON |
 | Patches | none |
 
 
@@ -169,7 +170,7 @@ database/               # Drizzle schema, client, migrations
 services/               # Civilization, catalog, game, game event, player, preferences APIs
 store/                  # Zustand stores
 types/                  # Shared TypeScript types
-utils/                  # Selection logic, date helpers
+utils/                  # Selection logic, date helpers, history validation, colocated *.test.ts
 assets/data/            # civilizations, worldWonders, religions, corporations JSON
 scripts/                # extract-vp-catalogs.mjs
 assets/fonts/           # Space Mono (bundled)
@@ -198,6 +199,8 @@ npm start          # Expo dev server
 npm run android    # Open on Android
 npm run ios        # Open on iOS
 npm run web        # Open in browser (currently broken: expo-sqlite worker chunk missing; use Android Expo Go)
+npm test           # Unit tests (domain logic)
+npm run typecheck  # TypeScript
 ```
 
 ## Database (schema changes)
