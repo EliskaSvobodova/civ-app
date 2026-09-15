@@ -17,7 +17,9 @@ export interface GameEventRepository {
   findEventTypeByKey(key: string): Promise<GameEventType | undefined>;
   findEventTypeByLabel(label: string): Promise<GameEventType | undefined>;
   insertEventType(input: InsertEventTypeInput): Promise<GameEventType>;
+  deleteCustomEventTypesNotIn(keys: string[]): Promise<void>;
   listByGameId(gameId: number): Promise<GameEventRecord[]>;
+  listByGameIds(gameIds: number[]): Promise<GameEventRecord[]>;
   insertGameEvent(input: InsertGameEventInput): Promise<GameEventRecord>;
   deleteGameEvent(eventId: number): Promise<void>;
 }
@@ -88,12 +90,40 @@ export class SqliteGameEventRepository implements GameEventRepository {
     return created;
   }
 
+  async deleteCustomEventTypesNotIn(keys: string[]): Promise<void> {
+    if (keys.length === 0) {
+      await this.executor.run(`DELETE FROM event_types WHERE is_builtin = 0`);
+      return;
+    }
+
+    const placeholders = keys.map(() => '?').join(', ');
+    await this.executor.run(
+      `DELETE FROM event_types WHERE is_builtin = 0 AND key NOT IN (${placeholders})`,
+      keys,
+    );
+  }
+
   async listByGameId(gameId: number): Promise<GameEventRecord[]> {
     const rows = await this.executor.getAll<GameEventJoinedDbRow>(
       `${GAME_EVENT_JOIN_SELECT}
        WHERE e.game_id = ?
        ORDER BY e.round ASC, e.id ASC`,
       [gameId],
+    );
+    return rows.map(mapGameEventJoinedRow);
+  }
+
+  async listByGameIds(gameIds: number[]): Promise<GameEventRecord[]> {
+    if (gameIds.length === 0) {
+      return [];
+    }
+
+    const placeholders = gameIds.map(() => '?').join(', ');
+    const rows = await this.executor.getAll<GameEventJoinedDbRow>(
+      `${GAME_EVENT_JOIN_SELECT}
+       WHERE e.game_id IN (${placeholders})
+       ORDER BY e.game_id ASC, e.round ASC, e.id ASC`,
+      gameIds,
     );
     return rows.map(mapGameEventJoinedRow);
   }

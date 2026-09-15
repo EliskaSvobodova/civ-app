@@ -92,6 +92,18 @@ export type InsertGameWithPlayersInput = {
   leaderKey: string;
   playedAt: string;
   createdAt: string;
+  endedAt?: string | null;
+  mapType?: string | null;
+  difficulty?: string | null;
+  victoryType?: string | null;
+  score?: number | null;
+  turnCount?: number | null;
+  won?: boolean | null;
+  notes?: string | null;
+  winnerKind?: string | null;
+  winnerPlayerIds?: string | null;
+  winnerCivilizationKey?: string | null;
+  winnerLeaderKey?: string | null;
   assignments: {
     playerId: number;
     civilizationKey: string;

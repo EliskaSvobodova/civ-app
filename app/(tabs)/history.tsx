@@ -1,6 +1,6 @@
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { Alert, ScrollView, View } from 'react-native';
 import { Button, Dialog, Divider, IconButton, Portal, Text } from 'react-native-paper';
 
 import { MatchEventsModal } from '@/components/game/MatchEventsModal';
@@ -11,11 +11,15 @@ import { ImperialCard } from '@/components/ui/ImperialCard';
 import { Screen } from '@/components/ui/Screen';
 import {
   deleteGame,
+  exportHistoryDocument,
   getGameHistory,
+  importHistory,
   updateGameMatch,
   type GameHistoryEntry,
   type UpdateGameMatchInput,
 } from '@/services';
+import type { HistoryImportMode } from '@/types';
+import { pickHistoryJson, saveHistoryJsonToDownloads, shareHistoryJson } from '@/utils/historyTransferFiles';
 
 function formatGameDate(iso: string): string {
   const date = new Date(iso);
@@ -35,6 +39,10 @@ export default function HistoryScreen() {
   const [eventsEntry, setEventsEntry] = useState<GameHistoryEntry | null>(null);
   const [entryToRemove, setEntryToRemove] = useState<GameHistoryEntry | null>(null);
   const [isRemoving, setIsRemoving] = useState(false);
+  const [importModePromptVisible, setImportModePromptVisible] = useState(false);
+  const [exportPromptVisible, setExportPromptVisible] = useState(false);
+  const [replaceConfirmVisible, setReplaceConfirmVisible] = useState(false);
+  const [isTransferring, setIsTransferring] = useState(false);
 
   const loadHistory = useCallback(async () => {
     try {
@@ -85,9 +93,82 @@ export default function HistoryScreen() {
     }
   };
 
+  const runExport = async (destination: 'share' | 'downloads') => {
+    setExportPromptVisible(false);
+    setIsTransferring(true);
+    try {
+      const document = await exportHistoryDocument();
+      if (destination === 'share') {
+        await shareHistoryJson(document);
+        return;
+      }
+
+      const saved = await saveHistoryJsonToDownloads(document);
+      if (!saved) {
+        return;
+      }
+      Alert.alert('Saved', `${saved.fileName}\n\n${saved.locationLabel}`);
+    } catch (error) {
+      Alert.alert(
+        'Export failed',
+        error instanceof Error ? error.message : 'Could not export history.',
+      );
+    } finally {
+      setIsTransferring(false);
+    }
+  };
+
+  const runImport = async (mode: HistoryImportMode) => {
+    setImportModePromptVisible(false);
+    setReplaceConfirmVisible(false);
+    try {
+      const document = await pickHistoryJson();
+      if (!document) {
+        return;
+      }
+      setIsTransferring(true);
+      const result = await importHistory(document, mode);
+      await loadHistory();
+      Alert.alert(
+        'Import complete',
+        mode === 'replace'
+          ? `Replaced history with ${result.gamesImported} game(s).`
+          : `Merged ${result.gamesImported} game(s) into history.`,
+      );
+    } catch (error) {
+      Alert.alert(
+        'Import failed',
+        error instanceof Error ? error.message : 'Could not import history.',
+      );
+    } finally {
+      setIsTransferring(false);
+    }
+  };
+
   return (
     <Screen className="flex-1 px-margin-mobile pt-4">
-      <Heading level="md">Match history</Heading>
+      <View className="flex-row items-start justify-between gap-2">
+        <Heading level="md" className="min-w-0 flex-1">
+          Match history
+        </Heading>
+        <View className="flex-row flex-wrap justify-end gap-2">
+          <Button
+            mode="outlined"
+            compact
+            onPress={() => setExportPromptVisible(true)}
+            disabled={isTransferring}
+            loading={isTransferring}>
+            Export
+          </Button>
+          <Button
+            mode="outlined"
+            compact
+            onPress={() => setImportModePromptVisible(true)}
+            disabled={isTransferring}>
+            Import
+          </Button>
+        </View>
+      </View>
       {civ ? (
         <Text variant="titleSmall" className="mt-2 uppercase tracking-wide text-primary">
           {civ.replace(/-/g, ' ')}
@@ -233,6 +314,83 @@ export default function HistoryScreen() {
               loading={isRemoving}
               disabled={isRemoving}>
               Remove
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+        <Dialog
+          visible={exportPromptVisible}
+          onDismiss={() => !isTransferring && setExportPromptVisible(false)}>
+          <Dialog.Title>Export history</Dialog.Title>
+          <Dialog.Content>
+            <Text variant="bodyMedium">
+              Share opens the system sheet. Save to Downloads writes a JSON file you can keep or
+              re-import later.
+            </Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setExportPromptVisible(false)} disabled={isTransferring}>
+              Cancel
+            </Button>
+            <Button onPress={() => runExport('share')} disabled={isTransferring}>
+              Share
+            </Button>
+            <Button
+              mode="contained"
+              onPress={() => runExport('downloads')}
+              loading={isTransferring}
+              disabled={isTransferring}>
+              Save to Downloads
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+        <Dialog
+          visible={importModePromptVisible}
+          onDismiss={() => !isTransferring && setImportModePromptVisible(false)}>
+          <Dialog.Title>Import history</Dialog.Title>
+          <Dialog.Content>
+            <Text variant="bodyMedium">
+              Merge keeps existing matches and appends the file. Replace wipes local history,
+              players, and custom event types not in the file.
+            </Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setImportModePromptVisible(false)} disabled={isTransferring}>
+              Cancel
+            </Button>
+            <Button onPress={() => runImport('merge')} disabled={isTransferring}>
+              Merge
+            </Button>
+            <Button
+              mode="contained"
+              onPress={() => {
+                setImportModePromptVisible(false);
+                setReplaceConfirmVisible(true);
+              }}
+              disabled={isTransferring}>
+              Replace
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+        <Dialog
+          visible={replaceConfirmVisible}
+          onDismiss={() => !isTransferring && setReplaceConfirmVisible(false)}>
+          <Dialog.Title>Replace all history?</Dialog.Title>
+          <Dialog.Content>
+            <Text variant="bodyMedium">
+              This deletes local history, players, and custom events not in the file, then loads
+              the selected JSON.
+            </Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setReplaceConfirmVisible(false)} disabled={isTransferring}>
+              Cancel
+            </Button>
+            <Button
+              mode="contained"
+              onPress={() => runImport('replace')}
+              loading={isTransferring}
+              disabled={isTransferring}>
+              Replace
             </Button>
           </Dialog.Actions>
         </Dialog>

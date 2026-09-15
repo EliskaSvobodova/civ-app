@@ -8,6 +8,7 @@ export interface PlayerRepository {
   findActiveByName(name: string): Promise<Player | undefined>;
   insert(name: string, createdAt: string): Promise<Player>;
   softDelete(id: number, deletedAt: string): Promise<void>;
+  hardDeleteAll(): Promise<void>;
   findNamesByIds(ids: number[]): Promise<Map<number, string>>;
 }
 
@@ -52,6 +53,10 @@ export class SqlitePlayerRepository implements PlayerRepository {
     if (result.changes === 0) {
       throw new Error('Player not found');
     }
+  }
+
+  async hardDeleteAll(): Promise<void> {
+    await this.executor.run('DELETE FROM players');
   }
 
   async findNamesByIds(ids: number[]): Promise<Map<number, string>> {
