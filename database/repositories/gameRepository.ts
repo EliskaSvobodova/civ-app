@@ -40,7 +40,8 @@ export class SqliteGameRepository implements GameRepository {
     return this.executor.getAll<GameHistoryRow>(
       `SELECT g.id AS game_id, g.played_at, g.ended_at, p.id AS player_id, p.name AS player_name,
               gp.civilization_key, gp.leader_key,
-              g.winner_kind, g.winner_player_ids, g.winner_civilization_key, g.winner_leader_key
+              g.winner_kind, g.winner_player_ids, g.winner_civilization_key, g.winner_leader_key,
+              g.map_type, g.difficulty, g.victory_type, g.score, g.turn_count, g.notes
        FROM games g
        INNER JOIN game_players gp ON gp.game_id = g.id
        INNER JOIN players p ON p.id = gp.player_id
@@ -118,7 +119,8 @@ export class SqliteGameRepository implements GameRepository {
     const result = await this.executor.run(
       `UPDATE games
        SET played_at = ?, ended_at = ?, winner_kind = ?, winner_player_ids = ?,
-           winner_civilization_key = ?, winner_leader_key = ?
+           winner_civilization_key = ?, winner_leader_key = ?,
+           victory_type = ?, score = ?, turn_count = ?, notes = ?
        WHERE id = ?`,
       [
         fields.startedAt,
@@ -127,6 +129,10 @@ export class SqliteGameRepository implements GameRepository {
         fields.winnerPlayerIds,
         fields.winnerCivilizationKey,
         fields.winnerLeaderKey,
+        fields.victoryType,
+        fields.score,
+        fields.turnCount,
+        fields.notes,
         gameId,
       ],
     );
