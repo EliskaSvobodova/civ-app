@@ -40,5 +40,6 @@ yarn-error.*
 /ios
 /android
 
-# agents
+# agents / local agent docs
 .superpowers/
+docs/superpowers/
