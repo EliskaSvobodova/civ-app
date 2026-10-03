@@ -3,6 +3,7 @@ import { View } from 'react-native';
 import { Text } from 'react-native-paper';
 
 import { imperialColors } from '@/constants/theme';
+import { gameLengthAxisMax, gameLengthAxisTicks } from '@/utils/gameLengthAxis';
 
 const HORIZONTAL_PADDING = 16;
 const PLOT_TOP = 8;
@@ -26,7 +27,8 @@ function positionForDays(days: number, maxDays: number, innerWidth: number): num
 
 export function GameLengthAxisChart({ durations }: GameLengthAxisChartProps) {
   const [chartWidth, setChartWidth] = useState(0);
-  const maxDays = useMemo(() => Math.max(...durations, 1), [durations]);
+  const maxDays = useMemo(() => Math.max(...durations, 0), [durations]);
+  const axisMax = useMemo(() => gameLengthAxisMax(maxDays), [maxDays]);
   const innerWidth = Math.max(0, chartWidth - HORIZONTAL_PADDING * 2);
 
   const stackedOffsets = useMemo(() => {
@@ -38,14 +40,7 @@ export function GameLengthAxisChart({ durations }: GameLengthAxisChartProps) {
     });
   }, [durations]);
 
-  const tickValues = useMemo(() => {
-    if (maxDays <= 1) {
-      return [1];
-    }
-    const mid = Math.round(maxDays / 2);
-    const ticks = [0, mid, maxDays];
-    return [...new Set(ticks)].sort((a, b) => a - b);
-  }, [maxDays]);
+  const tickValues = useMemo(() => gameLengthAxisTicks(maxDays), [maxDays]);
 
   const maxStack = Math.max(0, ...stackedOffsets);
   const axisY = PLOT_TOP + maxStack * (DOT_SIZE + DOT_STACK_GAP) + DOT_SIZE / 2;
@@ -68,7 +63,7 @@ export function GameLengthAxisChart({ durations }: GameLengthAxisChartProps) {
           }}
         />
         {durations.map((days, index) => {
-          const centerX = positionForDays(days, maxDays, innerWidth);
+          const centerX = positionForDays(days, axisMax, innerWidth);
           const stackIndex = stackedOffsets[index];
           return (
             <View
@@ -90,7 +85,7 @@ export function GameLengthAxisChart({ durations }: GameLengthAxisChartProps) {
       </View>
       <View className="relative mt-1" style={{ height: 20 }}>
         {tickValues.map((value) => {
-          const centerX = positionForDays(value, maxDays, innerWidth);
+          const centerX = positionForDays(value, axisMax, innerWidth);
           return (
             <Text
               key={value}

@@ -22,11 +22,13 @@ export type GameWinner =
 export type CivilizationWinCount = {
   civilizationKey: string;
   wins: number;
+  humanWins: number;
+  aiWins: number;
 };
 
 export type PlayerWinLeaderboardEntry = {
-  kind: 'human' | 'ai';
-  playerId: number | null;
+  kind: 'human' | 'team' | 'ai';
+  playerIds: number[];
   name: string;
   wins: number;
 };
@@ -117,15 +119,21 @@ export function aggregateCivilizationWins(
     playersByGame.set(row.game_id, list);
   }
 
-  const winCounts = new Map<string, number>();
+  const winCounts = new Map<string, { humanWins: number; aiWins: number }>();
 
-  const increment = (civilizationKey: string) => {
-    winCounts.set(civilizationKey, (winCounts.get(civilizationKey) ?? 0) + 1);
+  const increment = (civilizationKey: string, source: 'human' | 'ai') => {
+    const current = winCounts.get(civilizationKey) ?? { humanWins: 0, aiWins: 0 };
+    if (source === 'human') {
+      current.humanWins += 1;
+    } else {
+      current.aiWins += 1;
+    }
+    winCounts.set(civilizationKey, current);
   };
 
   for (const game of gameRows) {
     if (game.winner_kind === 'ai' && game.winner_civilization_key) {
-      increment(game.winner_civilization_key);
+      increment(game.winner_civilization_key, 'ai');
       continue;
     }
 
@@ -142,13 +150,18 @@ export function aggregateCivilizationWins(
     const winnerIdSet = new Set(winnerPlayerIds);
     for (const participant of participants) {
       if (winnerIdSet.has(participant.player_id)) {
-        increment(participant.civilization_key);
+        increment(participant.civilization_key, 'human');
       }
     }
   }
 
   return Array.from(winCounts.entries())
-    .map(([civilizationKey, wins]) => ({ civilizationKey, wins }))
+    .map(([civilizationKey, { humanWins, aiWins }]) => ({
+      civilizationKey,
+      wins: humanWins + aiWins,
+      humanWins,
+      aiWins,
+    }))
     .sort((a, b) => b.wins - a.wins || a.civilizationKey.localeCompare(b.civilizationKey));
 }
 
@@ -169,9 +182,12 @@ export function aggregatePlayerWins(gameRows: GameWinnerRow[]): Map<string, numb
       continue;
     }
 
-    for (const playerId of parseWinnerPlayerIds(game.winner_player_ids)) {
-      increment(String(playerId));
+    const winnerPlayerIds = parseWinnerPlayerIds(game.winner_player_ids);
+    if (winnerPlayerIds.length === 0) {
+      continue;
     }
+
+    increment(serializeWinnerPlayerIds(winnerPlayerIds));
   }
 
   return winCounts;

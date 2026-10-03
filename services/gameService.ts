@@ -8,6 +8,7 @@ import {
   aggregatePlayerWins,
   formatWinnerLabel,
   parseWinnerFromRow,
+  parseWinnerPlayerIds,
   sortPlayerLeaderboard,
   winnerFields,
   type CivilizationWinCount,
@@ -200,31 +201,40 @@ export async function getTopPlayersByWins(
     return [];
   }
 
-  const humanPlayerIds = Array.from(winCounts.keys())
-    .filter((key) => key !== AI_LEADERBOARD_KEY)
-    .map((key) => Number(key))
-    .filter((id) => Number.isFinite(id));
+  const humanPlayerIds = new Set<number>();
+  for (const key of winCounts.keys()) {
+    if (key === AI_LEADERBOARD_KEY) {
+      continue;
+    }
+    for (const playerId of parseWinnerPlayerIds(key)) {
+      humanPlayerIds.add(playerId);
+    }
+  }
 
-  const namesById = await players.findNamesByIds(humanPlayerIds);
+  const namesById = await players.findNamesByIds(Array.from(humanPlayerIds));
 
   const entries: PlayerWinLeaderboardEntry[] = [];
   for (const [key, wins] of winCounts.entries()) {
     if (key === AI_LEADERBOARD_KEY) {
-      entries.push({ kind: 'ai', playerId: null, name: 'AI', wins });
+      entries.push({ kind: 'ai', playerIds: [], name: 'AI', wins });
       continue;
     }
 
-    const playerId = Number(key);
-    if (!Number.isFinite(playerId)) {
+    const playerIds = parseWinnerPlayerIds(key);
+    if (playerIds.length === 0) {
       continue;
     }
 
-    entries.push({
-      kind: 'human',
-      playerId,
-      name: namesById.get(playerId) ?? `Player ${playerId}`,
-      wins,
-    });
+    const names = playerIds.map(
+      (playerId) => namesById.get(playerId) ?? `Player ${playerId}`,
+    );
+
+    if (playerIds.length === 1) {
+      entries.push({ kind: 'human', playerIds, name: names[0], wins });
+      continue;
+    }
+
+    entries.push({ kind: 'team', playerIds, name: `Team: ${names.join(', ')}`, wins });
   }
 
   return sortPlayerLeaderboard(entries).slice(0, limit);

@@ -23,6 +23,20 @@ function formatWinCount(wins: number): string {
   return wins === 1 ? '1 win' : `${wins} wins`;
 }
 
+function formatCivilizationWinBreakdown(entry: CivilizationWinCount): string {
+  return `${formatWinCount(entry.wins)} · ${entry.humanWins} human, ${entry.aiWins} AI`;
+}
+
+function playerLeaderboardKey(entry: PlayerWinLeaderboardEntry): string {
+  if (entry.kind === 'ai') {
+    return 'ai';
+  }
+  if (entry.kind === 'team') {
+    return `team-${entry.playerIds.join('-')}`;
+  }
+  return `human-${entry.playerIds[0]}`;
+}
+
 function LeaderboardRank({ rank }: { rank: number }) {
   return (
     <Text className="w-6 text-xl text-secondary" style={{ fontFamily: imperialFonts.serifBold }}>
@@ -49,7 +63,7 @@ function CivilizationLeaderboardCard({
           <View className="min-w-0 flex-1">
             <CivilizationLeaderHeader civilization={civilization} />
             <Text variant="bodyMedium" className="mt-2 text-secondary">
-              {formatWinCount(entry.wins)}
+              {formatCivilizationWinBreakdown(entry)}
             </Text>
           </View>
         ) : (
@@ -61,7 +75,7 @@ function CivilizationLeaderboardCard({
               {displayName}
             </Text>
             <Text variant="bodyMedium" className="mt-2 text-secondary">
-              {formatWinCount(entry.wins)}
+              {formatCivilizationWinBreakdown(entry)}
             </Text>
           </View>
         )}
@@ -193,7 +207,7 @@ export default function StatsScreen() {
                 {topPlayers.length > 0
                   ? topPlayers.map((entry, index) => (
                       <View
-                        key={entry.kind === 'ai' ? 'ai' : entry.playerId}
+                        key={playerLeaderboardKey(entry)}
                         className={index > 0 ? 'mt-3' : 'mt-2'}>
                         <PlayerLeaderboardCard entry={entry} rank={index + 1} />
                       </View>

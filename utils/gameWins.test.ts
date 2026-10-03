@@ -87,23 +87,27 @@ describe('aggregateCivilizationWins', () => {
     );
 
     expect(result).toEqual([
-      { civilizationKey: 'america', wins: 2 },
-      { civilizationKey: 'aztec', wins: 1 },
-      { civilizationKey: 'rome', wins: 1 },
+      { civilizationKey: 'america', wins: 2, humanWins: 2, aiWins: 0 },
+      { civilizationKey: 'aztec', wins: 1, humanWins: 0, aiWins: 1 },
+      { civilizationKey: 'rome', wins: 1, humanWins: 1, aiWins: 0 },
     ]);
   });
 });
 
 describe('aggregatePlayerWins', () => {
-  it('counts human player ids and a single AI bucket', () => {
+  it('counts team wins as one entity, solos separately, and a single AI bucket', () => {
     const result = aggregatePlayerWins([
       { id: 1, winner_kind: 'human', winner_player_ids: '[1,2]', winner_civilization_key: null },
-      { id: 2, winner_kind: 'ai', winner_player_ids: null, winner_civilization_key: 'aztec' },
-      { id: 3, winner_kind: 'ai', winner_player_ids: null, winner_civilization_key: 'rome' },
+      { id: 2, winner_kind: 'human', winner_player_ids: '[2,1]', winner_civilization_key: null },
+      { id: 3, winner_kind: 'human', winner_player_ids: '[1]', winner_civilization_key: null },
+      { id: 4, winner_kind: 'ai', winner_player_ids: null, winner_civilization_key: 'aztec' },
+      { id: 5, winner_kind: 'ai', winner_player_ids: null, winner_civilization_key: 'rome' },
     ]);
 
-    expect(result.get('1')).toBe(1);
-    expect(result.get('2')).toBe(1);
+    expect(result.get('[1,2]')).toBe(2);
+    expect(result.get('[1]')).toBe(1);
+    expect(result.get('1')).toBeUndefined();
+    expect(result.get('2')).toBeUndefined();
     expect(result.get('ai')).toBe(2);
   });
 });
