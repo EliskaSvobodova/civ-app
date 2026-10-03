@@ -62,9 +62,6 @@ The project is intentionally designed as:
 
 ## Planned / not yet in the UI
 
-The database schema and TypeScript types reserve fields for richer match metadata that is not wired up yet:
-
-* map type, difficulty, victory type, score, turn count, notes
 * cloud sync, accounts, and production analytics (e.g. Sentry)
 
 
