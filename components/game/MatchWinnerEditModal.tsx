@@ -25,7 +25,7 @@ import {
   todayLocalDateInput,
 } from '@/utils/gameDateTime';
 import {
-  MATCH_NONE_OPTION_ID,
+  labelVictoryType,
   optionIdToNullable,
   parseOptionalNonNegativeInt,
   selectValueOrNone,
@@ -90,6 +90,24 @@ export function MatchWinnerEditModal({
     return getAllCivilizations().filter((civ) => !participantCivKeys.has(civ.slug));
   }, [participantCivKeys]);
 
+  const victoryTypeOptions = useMemo(() => {
+    if (victoryType == null || victoryType === '') {
+      return VICTORY_TYPE_OPTIONS;
+    }
+    if (VICTORY_TYPE_OPTIONS.some((option) => option.id === victoryType)) {
+      return VICTORY_TYPE_OPTIONS;
+    }
+    const [noneOption, ...rest] = VICTORY_TYPE_OPTIONS;
+    return [
+      noneOption,
+      {
+        id: victoryType,
+        name: labelVictoryType(victoryType) ?? victoryType,
+      },
+      ...rest,
+    ];
+  }, [victoryType]);
+
   useEffect(() => {
     if (!entry || !visible) {
       return;
@@ -102,13 +120,10 @@ export function MatchWinnerEditModal({
     setMode(winnerToMode(winner));
     setSelectedPlayerIds(winnerToSelectedPlayerIds(entry, winner));
     setSelectedAiCivKey(winnerToAiCivilizationKey(winner));
-    const selectableVictoryTypes = new Set(
-      VICTORY_TYPE_OPTIONS.map((o) => o.id).filter((id) => id !== MATCH_NONE_OPTION_ID),
-    );
     setVictoryType(
-      entry.victoryType && selectableVictoryTypes.has(entry.victoryType)
-        ? entry.victoryType
-        : null,
+      entry.victoryType == null || entry.victoryType === ''
+        ? null
+        : entry.victoryType,
     );
     setScoreText(entry.score == null ? '' : String(entry.score));
     setTurnCountText(entry.turnCount == null ? '' : String(entry.turnCount));
@@ -315,7 +330,7 @@ export function MatchWinnerEditModal({
               <SearchableSelectField
                 label="Victory type"
                 value={selectValueOrNone(victoryType)}
-                options={VICTORY_TYPE_OPTIONS}
+                options={victoryTypeOptions}
                 placeholder="None"
                 searchable={false}
                 disabled={isSaving}

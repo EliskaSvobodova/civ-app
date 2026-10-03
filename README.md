@@ -62,6 +62,9 @@ The project is intentionally designed as:
 
 ## Planned / not yet in the UI
 
+* weighted randomization (e.g. prefer less warlike civs)
+* offering multiple random choices per player
+* “strongest civs encountered” tracking
 * cloud sync, accounts, and production analytics (e.g. Sentry)
 
 
