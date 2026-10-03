@@ -11,13 +11,12 @@ The project is intentionally designed as:
 
 * offline-first,
 * lightweight,
-* easy to maintain,
 * and optimized for rapid AI-assisted development using Cursor.
 
 
 # Core Features
 
-## Civilization library (implemented)
+## Civilization library
 
 * Browse all **43 Vox Populi** civilizations from static JSON (`assets/data/civilizations.json`)
 * Expand list rows for leader, unique ability, units, buildings, and wonders
@@ -26,7 +25,7 @@ The project is intentionally designed as:
 * Jump to match history filtered by civilization
 
 
-## Civilization selection (implemented)
+## Civilization selection
 
 * Create and manage named players (soft-delete supported in the database)
 * Build a **New Game** roster by selecting players
@@ -40,7 +39,7 @@ The project is intentionally designed as:
 * **Commit** a game to local storage (participants + civ/leader keys)
 
 
-## Match history (implemented)
+## Match history
 
 * List committed games with start/end dates and participants
 * Record and edit winners (human players or an AI civilization)
@@ -50,10 +49,15 @@ The project is intentionally designed as:
 * Filter history by civilization (from the Library tab)
 
 
-## Leaderboard & statistics (implemented)
+## Leaderboard & statistics
 
 * Top civilizations and top players by win count
 * Custom **game length** axis chart (days from start to end) when enough completed games exist
+
+
+## Data export / import
+
+* export and import recorded game history
 
 
 ## Planned / not yet in the UI
@@ -61,15 +65,10 @@ The project is intentionally designed as:
 The database schema and TypeScript types reserve fields for richer match metadata that is not wired up yet:
 
 * map type, difficulty, victory type, score, turn count, notes
-* weighted randomization (e.g. prefer less warlike civs)
-* offering multiple random choices per player
-* “strongest civs encountered” tracking
 * cloud sync, accounts, and production analytics (e.g. Sentry)
 
 
 # Project Goals
-
-## Primary Goals
 
 * Create a useful companion app for Civilization V (Vox Populi) players
 * Explore AI-assisted (“vibe coding”) development workflows
