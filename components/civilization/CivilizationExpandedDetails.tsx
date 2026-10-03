@@ -49,13 +49,22 @@ function ActionButton({
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      className={`flex-1 rounded-md py-3 active:opacity-90 ${
+      className={`flex-1 rounded-md active:opacity-90 ${
         isPrimary ? 'bg-primary' : 'border border-primary bg-surface'
-      }`}>
+      }`}
+      style={{
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+      }}>
       <Text
         variant="labelLarge"
-        className="text-center font-semibold uppercase tracking-wide"
-        style={{ color: isPrimary ? imperialColors.onPrimary : imperialColors.primary }}>
+        className="font-semibold uppercase tracking-wide"
+        style={{
+          color: isPrimary ? imperialColors.onPrimary : imperialColors.primary,
+          textAlign: 'center',
+        }}>
         {label}
       </Text>
     </Pressable>
