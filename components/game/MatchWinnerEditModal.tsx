@@ -25,6 +25,7 @@ import {
   todayLocalDateInput,
 } from '@/utils/gameDateTime';
 import {
+  MATCH_NONE_OPTION_ID,
   optionIdToNullable,
   parseOptionalNonNegativeInt,
   selectValueOrNone,
@@ -101,7 +102,14 @@ export function MatchWinnerEditModal({
     setMode(winnerToMode(winner));
     setSelectedPlayerIds(winnerToSelectedPlayerIds(entry, winner));
     setSelectedAiCivKey(winnerToAiCivilizationKey(winner));
-    setVictoryType(entry.victoryType);
+    const selectableVictoryTypes = new Set(
+      VICTORY_TYPE_OPTIONS.map((o) => o.id).filter((id) => id !== MATCH_NONE_OPTION_ID),
+    );
+    setVictoryType(
+      entry.victoryType && selectableVictoryTypes.has(entry.victoryType)
+        ? entry.victoryType
+        : null,
+    );
     setScoreText(entry.score == null ? '' : String(entry.score));
     setTurnCountText(entry.turnCount == null ? '' : String(entry.turnCount));
     setNotes(entry.notes ?? '');
