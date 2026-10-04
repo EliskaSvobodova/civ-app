@@ -157,14 +157,24 @@ export async function updateGameMatch(
   input: UpdateGameMatchInput,
 ): Promise<void> {
   const winner = winnerFields(input.winner);
+  let winnerScores: { playerId: number; score: number | null }[] | null = null;
+  let gameScore: number | null = input.score ?? null;
+  if (input.winner.kind === 'human') {
+    winnerScores = input.winner.playerIds.map((playerId) => ({
+      playerId,
+      score: input.score ?? null,
+    }));
+    gameScore = null;
+  }
   await getRepositories().games.updateMatch(gameId, {
     startedAt: input.startedAt,
     endedAt: input.endedAt,
     ...winner,
     victoryType: input.victoryType ?? null,
-    score: input.score ?? null,
+    score: gameScore,
     turnCount: input.turnCount ?? null,
     notes: input.notes ?? null,
+    winnerScores,
   });
 }
 

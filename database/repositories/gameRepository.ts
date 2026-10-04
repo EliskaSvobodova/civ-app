@@ -41,7 +41,8 @@ export class SqliteGameRepository implements GameRepository {
       `SELECT g.id AS game_id, g.played_at, g.ended_at, p.id AS player_id, p.name AS player_name,
               gp.civilization_key, gp.leader_key,
               g.winner_kind, g.winner_player_ids, g.winner_civilization_key, g.winner_leader_key,
-              g.map_type, g.difficulty, g.victory_type, g.score, g.turn_count, g.notes
+              g.map_type, g.difficulty, g.victory_type, g.score, gp.score AS player_score,
+              g.turn_count, g.notes
        FROM games g
        INNER JOIN game_players gp ON gp.game_id = g.id
        INNER JOIN players p ON p.id = gp.player_id
@@ -66,7 +67,7 @@ export class SqliteGameRepository implements GameRepository {
 
     const placeholders = gameIds.map(() => '?').join(', ');
     return this.executor.getAll<GamePlayerDbRow>(
-      `SELECT id, game_id, player_id, civilization_key, leader_key
+      `SELECT id, game_id, player_id, civilization_key, leader_key, score
        FROM game_players
        WHERE game_id IN (${placeholders})
        ORDER BY game_id ASC, id ASC`,
@@ -139,6 +140,17 @@ export class SqliteGameRepository implements GameRepository {
     if (result.changes === 0) {
       throw new Error('Game not found');
     }
+
+    await this.executor.run(`UPDATE game_players SET score = NULL WHERE game_id = ?`, [gameId]);
+
+    if (fields.winnerScores != null) {
+      for (const entry of fields.winnerScores) {
+        await this.executor.run(
+          `UPDATE game_players SET score = ? WHERE game_id = ? AND player_id = ?`,
+          [entry.score, gameId, entry.playerId],
+        );
+      }
+    }
   }
 
   async deleteById(gameId: number): Promise<void> {
@@ -190,12 +202,18 @@ export class SqliteGameRepository implements GameRepository {
     const insertedPlayers: GamePlayerRow[] = [];
     for (const assignment of input.assignments) {
       const playerResult = await this.executor.run(
-        `INSERT INTO game_players (game_id, player_id, civilization_key, leader_key)
-         VALUES (?, ?, ?, ?)`,
-        [gameId, assignment.playerId, assignment.civilizationKey, assignment.leaderKey],
+        `INSERT INTO game_players (game_id, player_id, civilization_key, leader_key, score)
+         VALUES (?, ?, ?, ?, ?)`,
+        [
+          gameId,
+          assignment.playerId,
+          assignment.civilizationKey,
+          assignment.leaderKey,
+          assignment.score ?? null,
+        ],
       );
       const row = await this.executor.getFirst<GamePlayerDbRow>(
-        `SELECT id, game_id, player_id, civilization_key, leader_key
+        `SELECT id, game_id, player_id, civilization_key, leader_key, score
          FROM game_players WHERE id = ?`,
         [playerResult.lastInsertRowId],
       );
