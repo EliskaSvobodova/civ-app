@@ -26,6 +26,7 @@ import {
   labelVictoryType,
   truncateNotes,
 } from '@/utils/matchMetadata';
+import { formatWinnerScoresLabel } from '@/utils/winnerScores';
 
 function formatGameDate(iso: string): string {
   const date = new Date(iso);
@@ -193,6 +194,20 @@ export default function HistoryScreen() {
             const mapLabel = labelMapType(entry.mapType);
             const difficultyLabel = labelDifficulty(entry.difficulty);
             const victoryLabel = labelVictoryType(entry.victoryType);
+            const winnerScoreLabel =
+              entry.winner?.kind === 'human'
+                ? formatWinnerScoresLabel(
+                    entry.winner.playerIds.map((playerId) => {
+                      const participant = entry.participants.find((p) => p.playerId === playerId);
+                      return {
+                        playerName: participant?.playerName ?? `Player ${playerId}`,
+                        score: participant?.score ?? null,
+                      };
+                    }),
+                  )
+                : entry.score != null
+                  ? String(entry.score)
+                  : null;
 
             return (
             <View key={entry.id}>
@@ -291,7 +306,7 @@ export default function HistoryScreen() {
                       </Text>
                     </>
                   ) : null}
-                  {victoryLabel || entry.score != null || entry.turnCount != null ? (
+                  {victoryLabel || winnerScoreLabel != null || entry.turnCount != null ? (
                     <View className="mt-2 flex-row flex-wrap gap-x-6 gap-y-2">
                       {victoryLabel ? (
                         <View>
@@ -305,7 +320,7 @@ export default function HistoryScreen() {
                           </Text>
                         </View>
                       ) : null}
-                      {entry.score != null ? (
+                      {winnerScoreLabel != null ? (
                         <View>
                           <Text
                             variant="labelMedium"
@@ -313,7 +328,7 @@ export default function HistoryScreen() {
                             Score
                           </Text>
                           <Text variant="titleSmall" className="mt-0.5 text-primary">
-                            {entry.score}
+                            {winnerScoreLabel}
                           </Text>
                         </View>
                       ) : null}
