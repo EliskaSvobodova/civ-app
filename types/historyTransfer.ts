@@ -15,6 +15,7 @@ export type HistoryTransferParticipant = {
   playerName: string;
   civilizationKey: string;
   leaderKey: string;
+  score?: number | null;
 };
 
 export type HistoryTransferWinner =
