@@ -148,6 +148,55 @@ async function importGames(
 
   for (const game of games) {
     const winner = winnerFieldsFromTransfer(game.winner, playerIdByName);
+
+    const winnerNameKeys =
+      game.winner?.kind === 'human'
+        ? new Set(game.winner.playerNames.map((name) => nameKey(name)))
+        : null;
+
+    const anyParticipantScore = game.participants.some(
+      (participant) => participant.score != null,
+    );
+    const legacySoloScore =
+      game.winner?.kind === 'human' &&
+      game.winner.playerNames.length === 1 &&
+      !anyParticipantScore &&
+      game.score != null
+        ? game.score
+        : null;
+
+    const assignments = game.participants.map((participant) => {
+      const playerId = playerIdByName.get(nameKey(participant.playerName));
+      if (playerId == null) {
+        throw new Error(`Player not found: ${participant.playerName}`);
+      }
+
+      let score: number | null = null;
+      if (game.winner?.kind === 'ai') {
+        score = null;
+      } else if (game.winner?.kind === 'human') {
+        const isWinner = winnerNameKeys!.has(nameKey(participant.playerName));
+        if (isWinner) {
+          if (legacySoloScore != null) {
+            score = legacySoloScore;
+          } else {
+            score = participant.score ?? null;
+          }
+        }
+      } else {
+        score = participant.score ?? null;
+      }
+
+      return {
+        playerId,
+        civilizationKey: participant.civilizationKey,
+        leaderKey: participant.leaderKey,
+        score,
+      };
+    });
+
+    const gameScore = game.winner?.kind === 'ai' ? (game.score ?? null) : null;
+
     const { game: inserted } = await gameRepo.insertGameWithPlayers({
       civilizationKey: game.civilizationKey,
       leaderKey: game.leaderKey,
@@ -157,22 +206,12 @@ async function importGames(
       mapType: game.mapType,
       difficulty: game.difficulty,
       victoryType: game.victoryType,
-      score: game.score,
+      score: gameScore,
       turnCount: game.turnCount,
       won: game.won,
       notes: game.notes,
       ...winner,
-      assignments: game.participants.map((participant) => {
-        const playerId = playerIdByName.get(nameKey(participant.playerName));
-        if (playerId == null) {
-          throw new Error(`Player not found: ${participant.playerName}`);
-        }
-        return {
-          playerId,
-          civilizationKey: participant.civilizationKey,
-          leaderKey: participant.leaderKey,
-        };
-      }),
+      assignments,
     });
 
     for (const event of game.events) {
@@ -234,11 +273,15 @@ export async function exportHistoryDocument(): Promise<HistoryTransferDocument> 
         throw new Error(`Missing player name for id ${participant.player_id}`);
       }
       playerNameSet.set(nameKey(playerName), { name: playerName });
-      return {
+      const transferParticipant: HistoryTransferGame['participants'][number] = {
         playerName,
         civilizationKey: participant.civilization_key,
         leaderKey: participant.leader_key,
       };
+      if (participant.score != null) {
+        transferParticipant.score = participant.score;
+      }
+      return transferParticipant;
     });
 
     let winner: HistoryTransferWinner | null = null;
@@ -281,7 +324,7 @@ export async function exportHistoryDocument(): Promise<HistoryTransferDocument> 
     if (row.map_type != null) game.mapType = row.map_type;
     if (row.difficulty != null) game.difficulty = row.difficulty;
     if (row.victory_type != null) game.victoryType = row.victory_type;
-    if (row.score != null) game.score = row.score;
+    if (row.winner_kind === 'ai' && row.score != null) game.score = row.score;
     if (row.turn_count != null) game.turnCount = row.turn_count;
     if (row.won != null) game.won = Boolean(row.won);
     if (row.notes != null) game.notes = row.notes;

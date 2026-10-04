@@ -46,6 +46,7 @@ export const gamePlayers = sqliteTable('game_players', {
     .references(() => players.id),
   civilizationKey: text('civilization_key').notNull(),
   leaderKey: text('leader_key').notNull(),
+  score: integer('score'),
 });
 
 export const userPreferences = sqliteTable('user_preferences', {

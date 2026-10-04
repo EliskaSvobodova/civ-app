@@ -7,6 +7,7 @@ import m0002 from './0002_harsh_doctor_doom.sql';
 import m0003 from './0003_eminent_peter_quill.sql';
 import m0004 from './0004_freezing_black_widow.sql';
 import m0005 from './0005_mute_captain_britain.sql';
+import m0006 from './0006_stormy_next_avengers.sql';
 
   export default {
     journal,
@@ -16,7 +17,8 @@ m0001,
 m0002,
 m0003,
 m0004,
-m0005
+m0005,
+m0006
     }
   }
   

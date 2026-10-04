@@ -16,6 +16,7 @@ import { PlayerSelectionPreferencesModal } from '@/components/player/PlayerSelec
 import { Heading } from '@/components/ui/Heading';
 import { ImperialCard } from '@/components/ui/ImperialCard';
 import { Screen } from '@/components/ui/Screen';
+import { SearchableSelectField } from '@/components/ui';
 import {
   createGame,
   createPlayer,
@@ -32,6 +33,12 @@ import {
   DEFAULT_PLAYER_SELECTION_PREFERENCES,
   type PlayerSelectionPreferences,
 } from '@/types/playerSelectionPreferences';
+import {
+  DIFFICULTY_OPTIONS,
+  MAP_TYPE_OPTIONS,
+  optionIdToNullable,
+  selectValueOrNone,
+} from '@/utils/matchMetadata';
 import { pickRandomCivilizationForPlayer } from '@/utils/playerCivilizationSelection';
 
 const MAX_RECENT_GAMES_LOOKUP = 20;
@@ -128,6 +135,8 @@ export default function SelectScreen() {
   >({});
   const [commitError, setCommitError] = useState<string | null>(null);
   const [isCommitting, setIsCommitting] = useState(false);
+  const [mapType, setMapType] = useState<string | null>(null);
+  const [difficulty, setDifficulty] = useState<string | null>(null);
   const [playerToDelete, setPlayerToDelete] = useState<Player | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [handPickPlayerId, setHandPickPlayerId] = useState<number | null>(null);
@@ -207,6 +216,8 @@ export default function SelectScreen() {
   const clearGame = () => {
     setGamePlayerIds([]);
     setCivilizationAssignments({});
+    setMapType(null);
+    setDifficulty(null);
   };
 
   useEffect(() => {
@@ -314,7 +325,7 @@ export default function SelectScreen() {
         }
         return { playerId: player.id, civilization };
       });
-      await createGame(assignments);
+      await createGame(assignments, { mapType, difficulty });
       clearGame();
     } catch (error) {
       setCommitError(error instanceof Error ? error.message : 'Failed to commit game');
@@ -567,6 +578,29 @@ export default function SelectScreen() {
               </View>
             );
           })}
+          <View className="mt-4 gap-3">
+            <Text variant="labelMedium" className="uppercase tracking-wide text-primary">
+              Match setup (optional)
+            </Text>
+            <SearchableSelectField
+              label="Map type"
+              value={selectValueOrNone(mapType)}
+              options={MAP_TYPE_OPTIONS}
+              placeholder="None"
+              searchable={false}
+              disabled={isCommitting}
+              onChange={(id) => setMapType(optionIdToNullable(id))}
+            />
+            <SearchableSelectField
+              label="Difficulty"
+              value={selectValueOrNone(difficulty)}
+              options={DIFFICULTY_OPTIONS}
+              placeholder="None"
+              searchable={false}
+              disabled={isCommitting}
+              onChange={(id) => setDifficulty(optionIdToNullable(id))}
+            />
+          </View>
           <Button
             mode="contained"
             className="mt-4"

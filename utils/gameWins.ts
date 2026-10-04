@@ -13,6 +13,7 @@ export type GameHistoryParticipant = {
   civilizationName: string;
   leaderName: string;
   civilizationKey: string;
+  score: number | null;
 };
 
 export type GameWinner =

@@ -36,12 +36,22 @@ export type CreateGameAssignment = {
   civilization: Civilization;
 };
 
+export type CreateGameOptions = {
+  mapType?: string | null;
+  difficulty?: string | null;
+};
+
 export type UpdateGameWinnerInput = GameWinner;
 
 export type UpdateGameMatchInput = {
   startedAt: string;
   endedAt: string;
   winner: UpdateGameWinnerInput;
+  victoryType?: string | null;
+  score?: number | null;
+  winnerScores?: { playerId: number; score: number | null }[];
+  turnCount?: number | null;
+  notes?: string | null;
 };
 
 export type GameHistoryEntry = {
@@ -51,6 +61,12 @@ export type GameHistoryEntry = {
   participants: GameHistoryParticipant[];
   winner: GameWinner | null;
   winnerLabel: string | null;
+  mapType: string | null;
+  difficulty: string | null;
+  victoryType: string | null;
+  score: number | null;
+  turnCount: number | null;
+  notes: string | null;
 };
 
 function resolveParticipant(
@@ -58,6 +74,7 @@ function resolveParticipant(
   playerName: string,
   civilizationKey: string,
   leaderKey: string,
+  score: number | null,
 ): GameHistoryParticipant {
   const civilization = getCivilizationByKey(civilizationKey);
   return {
@@ -66,6 +83,7 @@ function resolveParticipant(
     civilizationKey,
     civilizationName: civilization?.name ?? civilizationKey,
     leaderName: civilization?.leader.name ?? leaderKey,
+    score,
   };
 }
 
@@ -83,6 +101,12 @@ function groupGameHistoryRows(rows: GameHistoryRow[]): GameHistoryEntry[] {
         participants: [],
         winner,
         winnerLabel: null,
+        mapType: row.map_type,
+        difficulty: row.difficulty,
+        victoryType: row.victory_type,
+        score: row.score,
+        turnCount: row.turn_count,
+        notes: row.notes,
       };
       byGame.set(row.game_id, entry);
     }
@@ -92,6 +116,7 @@ function groupGameHistoryRows(rows: GameHistoryRow[]): GameHistoryEntry[] {
         row.player_name,
         row.civilization_key,
         row.leader_key,
+        row.player_score,
       ),
     );
   }
@@ -136,15 +161,22 @@ export async function updateGameMatch(
   input: UpdateGameMatchInput,
 ): Promise<void> {
   const winner = winnerFields(input.winner);
+  const isHuman = input.winner.kind === 'human';
   await getRepositories().games.updateMatch(gameId, {
     startedAt: input.startedAt,
     endedAt: input.endedAt,
     ...winner,
+    victoryType: input.victoryType ?? null,
+    score: isHuman ? null : (input.score ?? null),
+    turnCount: input.turnCount ?? null,
+    notes: input.notes ?? null,
+    winnerScores: isHuman ? (input.winnerScores ?? []) : null,
   });
 }
 
 export async function createGame(
   assignments: CreateGameAssignment[],
+  options?: CreateGameOptions,
 ): Promise<{ game: Game; gamePlayers: GamePlayerRow[] }> {
   if (assignments.length === 0) {
     throw new Error('At least one player is required');
@@ -158,6 +190,8 @@ export async function createGame(
     leaderKey: getLeaderKey(first.civilization),
     playedAt: now,
     createdAt: now,
+    mapType: options?.mapType ?? null,
+    difficulty: options?.difficulty ?? null,
     assignments: assignments.map((assignment) => ({
       playerId: assignment.playerId,
       civilizationKey: getCivilizationSlug(assignment.civilization),

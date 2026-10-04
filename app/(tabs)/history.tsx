@@ -20,6 +20,13 @@ import {
 } from '@/services';
 import type { HistoryImportMode } from '@/types';
 import { pickHistoryJson, saveHistoryJsonToDownloads, shareHistoryJson } from '@/utils/historyTransferFiles';
+import {
+  labelDifficulty,
+  labelMapType,
+  labelVictoryType,
+  truncateNotes,
+} from '@/utils/matchMetadata';
+import { formatWinnerScoresLabel } from '@/utils/winnerScores';
 
 function formatGameDate(iso: string): string {
   const date = new Date(iso);
@@ -183,7 +190,26 @@ export default function HistoryScreen() {
         </Text>
       ) : (
         <ScrollView className="mt-4 flex-1" keyboardShouldPersistTaps="handled">
-          {filteredEntries.map((entry, index) => (
+          {filteredEntries.map((entry, index) => {
+            const mapLabel = labelMapType(entry.mapType);
+            const difficultyLabel = labelDifficulty(entry.difficulty);
+            const victoryLabel = labelVictoryType(entry.victoryType);
+            const winnerScoreLabel =
+              entry.winner?.kind === 'human'
+                ? formatWinnerScoresLabel(
+                    entry.winner.playerIds.map((playerId) => {
+                      const participant = entry.participants.find((p) => p.playerId === playerId);
+                      return {
+                        playerName: participant?.playerName ?? `Player ${playerId}`,
+                        score: participant?.score ?? null,
+                      };
+                    }),
+                  )
+                : entry.score != null
+                  ? String(entry.score)
+                  : null;
+
+            return (
             <View key={entry.id}>
               {index > 0 ? <Divider className="my-3 bg-outline" /> : null}
               <ImperialCard className="overflow-hidden">
@@ -240,6 +266,34 @@ export default function HistoryScreen() {
                       />
                     </View>
                   </View>
+                  {mapLabel || difficultyLabel ? (
+                    <View className="mt-3 flex-row flex-wrap gap-x-6 gap-y-2">
+                      {mapLabel ? (
+                        <View>
+                          <Text
+                            variant="labelMedium"
+                            className="uppercase tracking-wide text-on-surface-variant">
+                            Map
+                          </Text>
+                          <Text variant="titleSmall" className="mt-0.5 text-primary">
+                            {mapLabel}
+                          </Text>
+                        </View>
+                      ) : null}
+                      {difficultyLabel ? (
+                        <View>
+                          <Text
+                            variant="labelMedium"
+                            className="uppercase tracking-wide text-on-surface-variant">
+                            Difficulty
+                          </Text>
+                          <Text variant="titleSmall" className="mt-0.5 text-primary">
+                            {difficultyLabel}
+                          </Text>
+                        </View>
+                      ) : null}
+                    </View>
+                  ) : null}
                   {entry.winnerLabel ? (
                     <>
                       <Text
@@ -251,6 +305,51 @@ export default function HistoryScreen() {
                         {entry.winnerLabel}
                       </Text>
                     </>
+                  ) : null}
+                  {victoryLabel || winnerScoreLabel != null || entry.turnCount != null ? (
+                    <View className="mt-2 flex-row flex-wrap gap-x-6 gap-y-2">
+                      {victoryLabel ? (
+                        <View>
+                          <Text
+                            variant="labelMedium"
+                            className="uppercase tracking-wide text-on-surface-variant">
+                            Victory
+                          </Text>
+                          <Text variant="titleSmall" className="mt-0.5 text-primary">
+                            {victoryLabel}
+                          </Text>
+                        </View>
+                      ) : null}
+                      {winnerScoreLabel != null ? (
+                        <View>
+                          <Text
+                            variant="labelMedium"
+                            className="uppercase tracking-wide text-on-surface-variant">
+                            Score
+                          </Text>
+                          <Text variant="titleSmall" className="mt-0.5 text-primary">
+                            {winnerScoreLabel}
+                          </Text>
+                        </View>
+                      ) : null}
+                      {entry.turnCount != null ? (
+                        <View>
+                          <Text
+                            variant="labelMedium"
+                            className="uppercase tracking-wide text-on-surface-variant">
+                            Turns
+                          </Text>
+                          <Text variant="titleSmall" className="mt-0.5 text-primary">
+                            {entry.turnCount}
+                          </Text>
+                        </View>
+                      ) : null}
+                    </View>
+                  ) : null}
+                  {entry.notes ? (
+                    <Text variant="bodySmall" className="mt-2 text-on-surface-variant">
+                      {truncateNotes(entry.notes)}
+                    </Text>
                   ) : null}
                   <Divider className="my-3 bg-outline" />
                   {entry.participants.map((participant, participantIndex) => (
@@ -275,7 +374,8 @@ export default function HistoryScreen() {
                 </View>
               </ImperialCard>
             </View>
-          ))}
+            );
+          })}
         </ScrollView>
       )}
       <MatchWinnerEditModal

@@ -53,6 +53,41 @@ describe('validateHistoryDocument', () => {
     expect(document.games[0].events[0].eventTypeKey).toBe('wonder_built');
   });
 
+  it('accepts participant scores on a human team game', () => {
+    const document = validateHistoryDocument(
+      validDocument({
+        players: [{ name: 'Alice' }, { name: 'Bob' }],
+        games: [
+          {
+            startedAt: '2024-01-01T12:00:00.000Z',
+            endedAt: null,
+            civilizationKey: 'america',
+            leaderKey: 'washington',
+            participants: [
+              {
+                playerName: 'Alice',
+                civilizationKey: 'america',
+                leaderKey: 'washington',
+                score: 1200,
+              },
+              {
+                playerName: 'Bob',
+                civilizationKey: 'rome',
+                leaderKey: 'augustus',
+                score: null,
+              },
+            ],
+            winner: { kind: 'human', playerNames: ['Alice'] },
+            events: [],
+          },
+        ],
+      }),
+    );
+
+    expect(document.games[0].participants[0].score).toBe(1200);
+    expect(document.games[0].participants[1].score).toBeNull();
+  });
+
   it('accepts an AI winner', () => {
     const document = validateHistoryDocument(
       validDocument({

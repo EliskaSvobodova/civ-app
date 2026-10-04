@@ -27,6 +27,13 @@ export type GameHistoryRow = {
   winner_player_ids: string | null;
   winner_civilization_key: string | null;
   winner_leader_key: string | null;
+  map_type: string | null;
+  difficulty: string | null;
+  victory_type: string | null;
+  score: number | null;
+  player_score: number | null;
+  turn_count: number | null;
+  notes: string | null;
 };
 
 export type GameRow = {
@@ -55,6 +62,7 @@ export type GamePlayerDbRow = {
   player_id: number;
   civilization_key: string;
   leader_key: string;
+  score: number | null;
 };
 
 export type GameWinnerRow = {
@@ -85,6 +93,11 @@ export type GameWinnerFields = {
 export type GameMatchUpdateFields = GameWinnerFields & {
   startedAt: string;
   endedAt: string;
+  victoryType: string | null;
+  score: number | null;
+  turnCount: number | null;
+  notes: string | null;
+  winnerScores: { playerId: number; score: number | null }[] | null;
 };
 
 export type InsertGameWithPlayersInput = {
@@ -108,6 +121,7 @@ export type InsertGameWithPlayersInput = {
     playerId: number;
     civilizationKey: string;
     leaderKey: string;
+    score?: number | null;
   }[];
 };
 

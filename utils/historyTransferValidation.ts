@@ -107,11 +107,14 @@ function validateParticipant(
   ) {
     throw new Error(`Invalid games[${gameIndex}].participants[${participantIndex}]`);
   }
-  return {
+  const participant: HistoryTransferParticipant = {
     playerName: normalizeName(value.playerName),
     civilizationKey: value.civilizationKey.trim(),
     leaderKey: value.leaderKey.trim(),
   };
+  const score = optionalNumberField(value, 'score');
+  if (score !== undefined) participant.score = score;
+  return participant;
 }
 
 function validateWinner(value: unknown, gameIndex: number): HistoryTransferWinner | null {

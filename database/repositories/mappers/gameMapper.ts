@@ -29,5 +29,6 @@ export function mapGamePlayerRow(row: GamePlayerDbRow): GamePlayerRow {
     playerId: row.player_id,
     civilizationKey: row.civilization_key,
     leaderKey: row.leader_key,
+    score: row.score,
   };
 }
