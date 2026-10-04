@@ -31,6 +31,7 @@ import {
   selectValueOrNone,
   VICTORY_TYPE_OPTIONS,
 } from '@/utils/matchMetadata';
+import { parseHumanWinnerScores } from '@/utils/winnerScores';
 
 type WinnerMode = 'human' | 'ai';
 
@@ -63,6 +64,15 @@ function winnerToAiCivilizationKey(winner: GameWinner | null): string | null {
   return winner?.kind === 'ai' ? winner.civilizationKey : null;
 }
 
+function seedHumanScoreTexts(entry: GameHistoryEntry): Record<number, string> {
+  const texts: Record<number, string> = {};
+  for (const participant of entry.participants) {
+    texts[participant.playerId] =
+      participant.score == null ? '' : String(participant.score);
+  }
+  return texts;
+}
+
 export function MatchWinnerEditModal({
   entry,
   visible,
@@ -75,7 +85,8 @@ export function MatchWinnerEditModal({
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<number[]>([]);
   const [selectedAiCivKey, setSelectedAiCivKey] = useState<string | null>(null);
   const [victoryType, setVictoryType] = useState<string | null>(null);
-  const [scoreText, setScoreText] = useState('');
+  const [aiScoreText, setAiScoreText] = useState('');
+  const [humanScoreTexts, setHumanScoreTexts] = useState<Record<number, string>>({});
   const [turnCountText, setTurnCountText] = useState('');
   const [notes, setNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -125,23 +136,44 @@ export function MatchWinnerEditModal({
         ? null
         : entry.victoryType,
     );
-    setScoreText(entry.score == null ? '' : String(entry.score));
+    setAiScoreText(entry.score == null ? '' : String(entry.score));
+    setHumanScoreTexts(seedHumanScoreTexts(entry));
     setTurnCountText(entry.turnCount == null ? '' : String(entry.turnCount));
     setNotes(entry.notes ?? '');
     setSaveError(null);
   }, [entry, visible]);
 
   const togglePlayer = (playerId: number) => {
-    setSelectedPlayerIds((current) =>
-      current.includes(playerId)
-        ? current.filter((id) => id !== playerId)
-        : [...current, playerId],
-    );
+    if (selectedPlayerIds.includes(playerId)) {
+      setSelectedPlayerIds((current) => current.filter((id) => id !== playerId));
+      setHumanScoreTexts((current) => {
+        const { [playerId]: _removed, ...rest } = current;
+        return rest;
+      });
+    } else {
+      setSelectedPlayerIds((current) => [...current, playerId]);
+      const participant = entry?.participants.find((p) => p.playerId === playerId);
+      setHumanScoreTexts((current) => ({
+        ...current,
+        [playerId]:
+          participant?.score == null ? '' : String(participant.score),
+      }));
+    }
   };
 
   const selectAllPlayers = () => {
     if (!entry) return;
     setSelectedPlayerIds(participantPlayerIds(entry));
+    setHumanScoreTexts((current) => {
+      const next = { ...current };
+      for (const participant of entry.participants) {
+        if (!(participant.playerId in next)) {
+          next[participant.playerId] =
+            participant.score == null ? '' : String(participant.score);
+        }
+      }
+      return next;
+    });
   };
 
   const handleSave = async () => {
@@ -193,11 +225,6 @@ export function MatchWinnerEditModal({
               getCivilizationByKey(selectedAiCivKey!)?.leader.id ?? selectedAiCivKey!,
           };
 
-    const scoreParsed = parseOptionalNonNegativeInt(scoreText);
-    if (!scoreParsed.ok) {
-      setSaveError(scoreParsed.error);
-      return;
-    }
     const turnsParsed = parseOptionalNonNegativeInt(turnCountText);
     if (!turnsParsed.ok) {
       setSaveError(turnsParsed.error);
@@ -209,15 +236,48 @@ export function MatchWinnerEditModal({
     setIsSaving(true);
     setSaveError(null);
     try {
-      await onSave(entry.id, {
-        startedAt,
-        endedAt,
-        winner,
-        victoryType,
-        score: scoreParsed.value,
-        turnCount: turnsParsed.value,
-        notes: trimmedNotes === '' ? null : trimmedNotes,
-      });
+      if (mode === 'human') {
+        const drafts = selectedPlayerIds.map((playerId) => ({
+          playerId,
+          playerName:
+            entry.participants.find((p) => p.playerId === playerId)?.playerName ??
+            `Player ${playerId}`,
+          raw: humanScoreTexts[playerId] ?? '',
+        }));
+        const parsed = parseHumanWinnerScores(drafts);
+        if (!parsed.ok) {
+          setSaveError(parsed.error);
+          setIsSaving(false);
+          return;
+        }
+        await onSave(entry.id, {
+          startedAt,
+          endedAt,
+          winner,
+          victoryType,
+          winnerScores: parsed.values,
+          score: null,
+          turnCount: turnsParsed.value,
+          notes: trimmedNotes === '' ? null : trimmedNotes,
+        });
+      } else {
+        const scoreParsed = parseOptionalNonNegativeInt(aiScoreText);
+        if (!scoreParsed.ok) {
+          setSaveError(scoreParsed.error);
+          setIsSaving(false);
+          return;
+        }
+        await onSave(entry.id, {
+          startedAt,
+          endedAt,
+          winner,
+          victoryType,
+          score: scoreParsed.value,
+          winnerScores: undefined,
+          turnCount: turnsParsed.value,
+          notes: trimmedNotes === '' ? null : trimmedNotes,
+        });
+      }
       onDismiss();
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : 'Failed to save match');
@@ -336,14 +396,35 @@ export function MatchWinnerEditModal({
                 disabled={isSaving}
                 onChange={(id) => setVictoryType(optionIdToNullable(id))}
               />
-              <TextInput
-                label="Score"
-                value={scoreText}
-                onChangeText={setScoreText}
-                mode="outlined"
-                keyboardType="number-pad"
-                disabled={isSaving}
-              />
+              {mode === 'human' ? (
+                selectedPlayerIds.map((playerId) => {
+                  const name =
+                    entry.participants.find((p) => p.playerId === playerId)?.playerName ??
+                    `Player ${playerId}`;
+                  return (
+                    <TextInput
+                      key={playerId}
+                      label={`Score — ${name}`}
+                      value={humanScoreTexts[playerId] ?? ''}
+                      onChangeText={(text) =>
+                        setHumanScoreTexts((current) => ({ ...current, [playerId]: text }))
+                      }
+                      mode="outlined"
+                      keyboardType="number-pad"
+                      disabled={isSaving}
+                    />
+                  );
+                })
+              ) : (
+                <TextInput
+                  label="Score"
+                  value={aiScoreText}
+                  onChangeText={setAiScoreText}
+                  mode="outlined"
+                  keyboardType="number-pad"
+                  disabled={isSaving}
+                />
+              )}
               <TextInput
                 label="Turn count"
                 value={turnCountText}
