@@ -49,6 +49,7 @@ export type UpdateGameMatchInput = {
   winner: UpdateGameWinnerInput;
   victoryType?: string | null;
   score?: number | null;
+  winnerScores?: { playerId: number; score: number | null }[];
   turnCount?: number | null;
   notes?: string | null;
 };
@@ -73,6 +74,7 @@ function resolveParticipant(
   playerName: string,
   civilizationKey: string,
   leaderKey: string,
+  score: number | null,
 ): GameHistoryParticipant {
   const civilization = getCivilizationByKey(civilizationKey);
   return {
@@ -81,6 +83,7 @@ function resolveParticipant(
     civilizationKey,
     civilizationName: civilization?.name ?? civilizationKey,
     leaderName: civilization?.leader.name ?? leaderKey,
+    score,
   };
 }
 
@@ -113,6 +116,7 @@ function groupGameHistoryRows(rows: GameHistoryRow[]): GameHistoryEntry[] {
         row.player_name,
         row.civilization_key,
         row.leader_key,
+        row.player_score,
       ),
     );
   }
@@ -157,24 +161,16 @@ export async function updateGameMatch(
   input: UpdateGameMatchInput,
 ): Promise<void> {
   const winner = winnerFields(input.winner);
-  let winnerScores: { playerId: number; score: number | null }[] | null = null;
-  let gameScore: number | null = input.score ?? null;
-  if (input.winner.kind === 'human') {
-    winnerScores = input.winner.playerIds.map((playerId) => ({
-      playerId,
-      score: input.score ?? null,
-    }));
-    gameScore = null;
-  }
+  const isHuman = input.winner.kind === 'human';
   await getRepositories().games.updateMatch(gameId, {
     startedAt: input.startedAt,
     endedAt: input.endedAt,
     ...winner,
     victoryType: input.victoryType ?? null,
-    score: gameScore,
+    score: isHuman ? null : (input.score ?? null),
     turnCount: input.turnCount ?? null,
     notes: input.notes ?? null,
-    winnerScores,
+    winnerScores: isHuman ? (input.winnerScores ?? []) : null,
   });
 }
 

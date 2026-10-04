@@ -15,6 +15,7 @@ const alice: GameHistoryParticipant = {
   civilizationName: 'America',
   leaderName: 'George Washington',
   civilizationKey: 'america',
+  score: null,
 };
 
 const bob: GameHistoryParticipant = {
@@ -23,6 +24,7 @@ const bob: GameHistoryParticipant = {
   civilizationName: 'Rome',
   leaderName: 'Augustus',
   civilizationKey: 'rome',
+  score: null,
 };
 
 describe('winner player ids', () => {
